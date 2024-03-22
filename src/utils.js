@@ -2,7 +2,7 @@ export function getRandomNumberByRange(start, end){
   return Math.floor(Math.random() * (end - start) + start)
 }
 
-export function renderScore() {
+export function renderScore(oppo = [], oppo2 = []) {
   let lose_score = getRandomNumberByRange(0, 3)
   let win_score = 3
 
@@ -14,7 +14,7 @@ export function renderScore() {
   let opponent2_score = win === 'opponent2' ? win_score : lose_score
 
   return {
-      opponent1: { score: opponent1_score, result: opponent1_result },
-      opponent2: { score: opponent2_score, result: opponent2_result }
+      opponent1: { score: opponent1_score, result: opponent1_result, ...oppo },
+      opponent2: { score: opponent2_score, result: opponent2_result, ...oppo2 }
   }
 }

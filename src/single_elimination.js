@@ -146,15 +146,27 @@ function setParticipantImages(tournamentData) {
 
 function onMatchClicked(bracketsViewer, elementString) {
     bracketsViewer.onMatchClicked = async match => {
+        // 新的成績
+        const newMatchData = () => ({
+            id: match.id,
+            ...renderScore(match.opponent1, match.opponent2)
+        })
+
         // Match 沒有凍結才可以輸入成績
         if (!helpers.isMatchUpdateLocked(match)) {
-            const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, {
-                id: match.id,
-                ...renderScore()
-            })
+            const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, newMatchData())
 
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
+        }
+
+        console.log('新的成績',newMatchData())
+        // 淘汰賽 且完成賽事
+        if (!helpers.isRoundRobin(bracketsViewer.stage) && helpers.isMatchWinCompleted(match)) {
+            console.log('淘汰賽且完成賽事')
+            // 如果勝方沒變 只要更新賽事成績即可
+            console.log(helpers.getWinner(newMatchData()))
+            console.log(helpers.getWinner(match))
         }
     }
 }
