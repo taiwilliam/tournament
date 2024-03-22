@@ -1,180 +1,169 @@
-import { InMemoryDatabase } from "brackets-memory-db";
-import { BracketsManager } from "brackets-manager";
-import "brackets-viewer/dist/brackets-viewer.min.js";
-import "brackets-viewer/dist/brackets-viewer.min.css";
+import { InMemoryDatabase } from 'brackets-memory-db'
+import { BracketsManager, helpers } from 'brackets-manager'
+import 'brackets-viewer/dist/brackets-viewer.min.js'
+import 'brackets-viewer/dist/brackets-viewer.min.css'
+import { renderScore } from './utils'
 
-const storage = new InMemoryDatabase();
-const manager = new BracketsManager(storage);
-let data = ''
+// ParticipantResult
+// id: number | null 如果是null 則參與者待訂
+// position: number 參與者來自哪裡
+// result: 結果 'win' | 'draw' | 'loss'
+// score: 分數 number
+// forfeit: 棄賽 boolean 另一邊自動獲勝
 
-const size = 8; // 4 / 8 | 16 | 32 | 64 | 128
-// const participants = [null, "1", "2", null, "4", "5", null, "6"];
-// const participants = ["1","2","3","4","5","6",null,null];
+// opponent1: { score: 0, result: '' },
+// opponent2: { score: 0, result: '', forfeit: true }
+
+const storage = new InMemoryDatabase()
+const manager = new BracketsManager(storage)
+
+const size = 8 // 4 / 8 | 16 | 32 | 64 | 128
+// 注入參賽隊伍資料
 const participants = [
-  {
-    id: 1,
-    tournament_id: 0,
-    name: "威廉",
-    imageUrl: "https://github.githubassets.com/pinned-octocat.svg"
-  },
-  {
-    id: 2,
-    tournament_id: 0,
-    name: "凱恩"
-  },
-  {
-    id: 3,
-    tournament_id: 0,
-    name: "約翰"
-  },
-  {
-    id: 4,
-    tournament_id: 0,
-    name: "亨利"
-  },
-  {
-    id: 5,
-    tournament_id: 0,
-    name: "西卡"
-  },
-  {
-    id: 6,
-    tournament_id: 0,
-    name: "特斯拉"
-  },
-  {
-    id: 7,
-    tournament_id: 0,
-    name: "愛迪生"
-  },
+    {
+        id: 1,
+        tournament_id: 0,
+        name: '威廉'
+    },
+    {
+        id: 2,
+        tournament_id: 0,
+        name: '凱恩'
+    },
+    {
+        id: 3,
+        tournament_id: 0,
+        name: '約翰'
+    },
+    {
+        id: 4,
+        tournament_id: 0,
+        name: '亨利'
+    },
+    {
+        id: 5,
+        tournament_id: 0,
+        name: '西卡'
+    },
+    {
+        id: 6,
+        tournament_id: 0,
+        name: '特斯拉'
+    },
+    {
+        id: 7,
+        tournament_id: 0,
+        name: '愛迪生'
+    }
 ]
 
-const rendering = async () => {
-  await manager.create({
-    name: "單淘汰賽測試",
-    tournamentId: 0,
-    type: "single_elimination", // "single_elimination", "double_elimination", "round_robin"
-    seeding: participants,
-    settings: {
-      seedOrdering: ["natural"], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
-      balanceByes: false, // 是否平均分配輪空 避免bye+bye狀況出現
-      size: size,
-      matchesChildCount: 0,
-      consolationFinal: true // 是否要比出三四名
-    }
-  });
-  const tournamentData = await manager.get.stageData(0);
-  // setData(tournamentData);
-  data = tournamentData;
-  console.log("tournamentData:", tournamentData);
-  rerendering()
-};
+// 創建賽事管理者 createBracketsManager return一個tournamentData
+const tournamentData = await createBracketsManager(0)
+// 1. 利用// tournamentData.match 創建後端match資料表
 
-const rerendering = async () => {
-  const bracketsViewerNode = document.querySelector(".brackets-viewer");
-  bracketsViewerNode?.replaceChildren();
+// 2. 渲染賽程圖
+initBracketsViewer('.brackets-viewer', tournamentData)
 
-  console.log( bracketsViewer)
-
-  if (data && data.participant !== null) {
-    // This is optional. You must do it before render().
-    bracketsViewer.setParticipantImages(
-      data.participant.map((participant) => {
-        return {
-          participantId: participant.id,
-          imageUrl: "https://github.githubassets.com/pinned-octocat.svg"
+async function createBracketsManager(tournamentId) {
+    await manager.create.stage({
+        name: '雙敗淘汰賽測試',
+        tournamentId: tournamentId, // 賽事ID
+        type: 'single_elimination', // "single_elimination", "double_elimination", "round_robin"
+        seeding: participants,
+        settings: {
+            seedOrdering: ['natural'], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
+            balanceByes: false, // 是否平均分配輪空
+            size: size, // 淘汰賽尺寸
+            consolationFinal: true, // 半決賽負者之間可選的決賽
+            skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
+            matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
+            showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
+            grandFinal: 'double',
+            // - If `none` 則沒有總決賽
+            // - If `simple` 則決賽為單場比賽，勝利者就是舞台的勝利者，勝者會變單淘汰
+            // - If `double` 勝者如果輸了，則可以再次進行決賽 (更為公平，所有選手都要雙敗才會出局)
+            consolationFinal: true // 是否要比出三四名
         }
-      })
-    );
+    })
 
+    return await manager.get.stageData(tournamentId) // 用tournamentId獲取階段數據 為一個Promise
+}
 
-    bracketsViewer.onMatchClicked = async (match) => {
-      console.log("A match was clicked", match);
+async function initBracketsViewer(elementString, tournamentData = null) {
+    // 渲染前必須清除畫面元素
+    clearViewElement(elementString)
 
-      try {
-        await manager.update.match({
-          id: match.id,
-          opponent1: { score: 5 },
-          opponent2: { score: 7, result: "win" }
-        });
-        const tourneyData2 = await manager.get.currentMatches(0);
-        const tourneyData = await manager.get.stageData(0);
-        // setData(tourneyData);
-        data = tourneyData
-        console.log("A tourney", tourneyData2, tourneyData);
-        rerendering()
-      } catch (error) {}
-    };
+    // 防呆
+    if (!tournamentData || tournamentData.participant == null) return
 
-    console.log('----render-----')
+    // 注入球員頭貼資訊
+    setParticipantImages(tournamentData)
+
+    onMatchClicked(bracketsViewer, elementString)
+
+    renderBracketsViewer(elementString, tournamentData)
+}
+
+async function renderBracketsViewer(elementString, tournamentData) {
+    // 渲染前必須清除畫面元素
+    clearViewElement(elementString)
+
     bracketsViewer.render(
-      {
-        stages: data.stage,
-        matches: data.match,
-        matchGames: data.match_game,
-        participants: data.participant
-      },
-      {
-        // customRoundName: (info, t) => {
-        //   // You have a reference to `t` in order to translate things.
-        //   // Returning `undefined` will fallback to the default round name in the current language.
+        {
+            stages: tournamentData?.stage,
+            matches: tournamentData?.match,
+            matchGames: tournamentData?.match_game,
+            participants: tournamentData?.participant
+        },
+        {
+            clear: true, // 使否清除之前的資料
+            selector: elementString,
+            participantOriginPlacement: 'before', // "none" | "before" | "after" UI設定: id的位置
+            separatedChildCountLabel: true, // 顯示每個session上的label
+            showSlotsOrigin: true, // 是否顯示槽的來源（只要可能）
+            showLowerBracketSlotsOrigin: true, // 是否顯示槽位的起源（在淘汰階段的下括號中） 雙敗淘汰適用
+            highlightParticipantOnHover: true, // hover團隊路徑
+            showRankingTable: true // 循環賽階段是否顯示排名表
+        }
+    )
+}
 
-        //   console.log('---------------------')
-        //   console.log(info)
-        //   if (info.fractionOfFinal === 1 / 2) {
-        //     if (info.groupType === "single-bracket") {
-        //       // Single elimination
-        //       return "Semi Finals";
-        //     } else {
-        //       // Double elimination
-        //       return `${t(`abbreviations.${info.groupType}`)} ESemi Finals`;
-        //     }
-        //   }
-        //   if (info.fractionOfFinal === 1 / 4) {
-        //     return "Quarter Finals";
-        //   }
+function clearViewElement(elementString) {
+    const bracketsViewerNode = document.querySelector(elementString)
+    bracketsViewerNode?.replaceChildren()
+}
 
-        //   if (info.finalType === "grand-final") {
-        //     if (info.roundCount > 1) {
-        //       return `${t(`abbreviations.${info.finalType}`)} Final Round ${
-        //         info.roundNumber
-        //       }`;
-        //     }
-        //     return `Grand Final`;
-        //   }
-        // },
-        customRoundName: (e) => console.log(e),
-        // onMatchClick: matchClickCallback,
-        clear: true, // 使否顯示之前的資料
-        selector: '.brackets-viewer',
-        participantOriginPlacement: "before", // "none" | "before" | "after" UI設定: id的位置
-        separatedChildCountLabel: true, // 顯示每個session上的label
-        showSlotsOrigin: true, // 是否顯示槽的來源（只要可能）
-        showLowerBracketSlotsOrigin: true, // 是否顯示槽位的起源（在淘汰階段的下括號中） 雙敗淘汰適用
-        highlightParticipantOnHover: true, // hover團隊路徑
-        showRankingTable: true, // 循環賽階段是否顯示排名表
-      }
-    );
-  }
-  // console.log(data);
-};
+function setParticipantImages(tournamentData) {
+    bracketsViewer.setParticipantImages(
+        tournamentData.participant.map(participant => {
+            return {
+                participantId: participant.id,
+                imageUrl: 'https://github.githubassets.com/pinned-octocat.svg'
+            }
+        })
+    )
+}
 
-async function matchClickCallback(match) {
-  console.log("A match was clicked", match);
+function onMatchClicked(bracketsViewer, elementString) {
+    bracketsViewer.onMatchClicked = async match => {
+        // Match 沒有凍結才可以輸入成績
+        if (!helpers.isMatchUpdateLocked(match)) {
+            const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, {
+                id: match.id,
+                ...renderScore()
+            })
 
-  try {
-    await manager.update.match({
-      id: match.id,
-      opponent1: { score: 5 },
-      opponent2: { score: 7, result: "win" }
-    });
-    const tourneyData2 = await manager.get.currentMatches(0);
-    const tourneyData = await manager.get.stageData(0);
-    // setData(tourneyData);
-    data = tourneyData
-    console.log("A tourney", tourneyData2);
-    rerendering()
-  } catch (error) {}
-};
+            // 更新後重新渲染畫面
+            renderBracketsViewer(elementString, tournamentData)
+        }
+    }
+}
 
-rendering()
+async function updateTournamentMatch(tournament_id, data) {
+    try {
+        await manager.update.match(data)
+        return await manager.get.stageData(tournament_id)
+    } catch (error) {
+        console.log(error)
+    }
+}

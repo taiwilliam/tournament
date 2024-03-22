@@ -2,6 +2,8 @@ import { InMemoryDatabase } from 'brackets-memory-db'
 import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
+import { renderScore } from './utils'
+
 
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
@@ -67,10 +69,11 @@ async function createBracketsManager(tournamentId) {
             skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
             matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
             showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
-            grandFinal: 'double'
+            grandFinal: 'double',
             // - If `none` 則沒有總決賽
             // - If `simple` 則決賽為單場比賽，勝利者就是舞台的勝利者，勝者會變單淘汰
             // - If `double` 勝者如果輸了，則可以再次進行決賽 (更為公平，所有選手都要雙敗才會出局)
+            consolationFinal: true // 是否要比出三四名
         }
     })
 
@@ -138,14 +141,11 @@ function onMatchClicked(bracketsViewer, elementString) {
         if (!helpers.isMatchUpdateLocked(match)) {
             const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, {
                 id: match.id,
-                opponent1: { score: 3, result: 'win' },
-                opponent2: { score: 0 }
+                ...renderScore()
             })
 
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
-
-            // console.log(helpers.getFractionOfFinal(1,2))
         }
     }
 }

@@ -1,4 +1,4 @@
-// import './single_elimination'
+import './single_elimination'
 // import './double_elimination'
-import './round_robin'
+// import './round_robin'
 

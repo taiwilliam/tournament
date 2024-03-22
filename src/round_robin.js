@@ -2,6 +2,7 @@ import { InMemoryDatabase } from 'brackets-memory-db'
 import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
+import { renderScore } from './utils'
 
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
@@ -56,11 +57,13 @@ const participants = [
     }
 ]
 
-// 創建賽事管理者 createBracketsManager return一個tournamentData
+// 1. 創建賽事管理者 createBracketsManager return一個tournamentData
 const tournamentData = await createBracketsManager(0)
-// 1. 利用// tournamentData.match 創建後端match資料表
 
-// 2. 渲染賽程圖
+// 2. 利用// tournamentData.match 創建後端match資料表
+console.log(tournamentData.match) // 這筆資料需要存進draw欄位
+
+// 3. 渲染賽程圖
 initBracketsViewer('.brackets-viewer', tournamentData)
 
 async function createBracketsManager(tournamentId) {
@@ -157,31 +160,7 @@ function onMatchClicked(bracketsViewer, elementString) {
 
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
-
-            console.log(renderScore())
-            // console.log(helpers.getFractionOfFinal(1,2))
         }
-    }
-}
-
-function getRandomNumberByRange(start, end){
-    return Math.floor(Math.random() * (end - start) + start)
-}
-
-function renderScore() {
-    let lose_score = getRandomNumberByRange(0, 3)
-    let win_score = 3
-
-    let win = getRandomNumberByRange(0, 1) == 0 ? 'opponent1' : 'opponent2'
-
-    let opponent1_result = win === 'opponent1' ? 'win' : 'lose'
-    let opponent2_result = win === 'opponent2' ? 'win' : 'lose'
-    let opponent1_score = win === 'opponent1' ? win_score : lose_score
-    let opponent2_score = win === 'opponent2' ? win_score : lose_score
-
-    return {
-        opponent1: { score: opponent1_score, result: opponent1_result },
-        opponent2: { score: opponent2_score, result: opponent2_result }
     }
 }
 
