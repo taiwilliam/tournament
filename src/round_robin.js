@@ -6,7 +6,7 @@ import 'brackets-viewer/dist/brackets-viewer.min.css'
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
 
-const size = 8 // 4 / 8 | 16 | 32 | 64 | 128
+const size = 9 // 4 / 8 | 16 | 32 | 64 | 128
 // 注入參賽隊伍資料
 const participants = [
     {
@@ -43,6 +43,16 @@ const participants = [
         id: 7,
         tournament_id: 0,
         name: '愛迪生'
+    },
+    {
+        id: 8,
+        tournament_id: 0,
+        name: '龔利'
+    },
+    {
+        id: 9,
+        tournament_id: 0,
+        name: '亭妤'
     }
 ]
 
@@ -55,22 +65,22 @@ initBracketsViewer('.brackets-viewer', tournamentData)
 
 async function createBracketsManager(tournamentId) {
     await manager.create.stage({
-        name: '雙敗淘汰賽測試',
+        name: '循環賽測試',
         tournamentId: tournamentId, // 賽事ID
-        type: 'double_elimination', // "single_elimination", "double_elimination", "round_robin"
+        type: 'round_robin', // "single_elimination", "double_elimination", "round_robin"
         seeding: participants,
         settings: {
             seedOrdering: ['natural'], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
             balanceByes: false, // 是否平均分配輪空
-            size: size, // 淘汰賽尺寸
-            consolationFinal: true, // 半決賽負者之間可選的決賽
-            skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
+            size: size, // 淘汰賽尺寸，循環賽總人數
+            groupCount: 2, // 分成幾組 round_robin 專用
+            roundRobinMode: 'simple', // simple:單循環、double: 雙循環
+            grandFinal: 'double', // 使否決賽勝方要打兩場
             matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
-            showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
-            grandFinal: 'double'
+            consolationFinal: 'double'
             // - If `none` 則沒有總決賽
             // - If `simple` 則決賽為單場比賽，勝利者就是舞台的勝利者，勝者會變單淘汰
-            // - If `double` 勝者如果輸了，則可以再次進行決賽 (更為公平，所有選手都要雙敗才會出局)
+            // - If `double` 勝者如果輸了，則可以再次進行決賽
         }
     })
 
@@ -104,13 +114,17 @@ async function renderBracketsViewer(elementString, tournamentData) {
             participants: tournamentData?.participant
         },
         {
+            customRoundName: (...arg) => {
+                console.log(arg)
+            },
             clear: true, // 使否清除之前的資料
             selector: elementString,
             participantOriginPlacement: 'before', // "none" | "before" | "after" UI設定: id的位置
-            separatedChildCountLabel: true, // 顯示每個session上的label
+            separatedChildCountLabel: true, // session上的label 資訊是否放在同一邊 true: Bo3 會顯示在右邊
             showSlotsOrigin: true, // 是否顯示槽的來源（只要可能）
             showLowerBracketSlotsOrigin: true, // 是否顯示槽位的起源（在淘汰階段的下括號中） 雙敗淘汰適用
             highlightParticipantOnHover: true, // hover團隊路徑
+            showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
             showRankingTable: true // 循環賽階段是否顯示排名表
         }
     )
@@ -138,15 +152,36 @@ function onMatchClicked(bracketsViewer, elementString) {
         if (!helpers.isMatchUpdateLocked(match)) {
             const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, {
                 id: match.id,
-                opponent1: { score: 3, result: 'win' },
-                opponent2: { score: 0 }
+                ...renderScore()
             })
 
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
 
+            console.log(renderScore())
             // console.log(helpers.getFractionOfFinal(1,2))
         }
+    }
+}
+
+function getRandomNumberByRange(start, end){
+    return Math.floor(Math.random() * (end - start) + start)
+}
+
+function renderScore() {
+    let lose_score = getRandomNumberByRange(0, 3)
+    let win_score = 3
+
+    let win = getRandomNumberByRange(0, 1) == 0 ? 'opponent1' : 'opponent2'
+
+    let opponent1_result = win === 'opponent1' ? 'win' : 'lose'
+    let opponent2_result = win === 'opponent2' ? 'win' : 'lose'
+    let opponent1_score = win === 'opponent1' ? win_score : lose_score
+    let opponent2_score = win === 'opponent2' ? win_score : lose_score
+
+    return {
+        opponent1: { score: opponent1_score, result: opponent1_result },
+        opponent2: { score: opponent2_score, result: opponent2_result }
     }
 }
 

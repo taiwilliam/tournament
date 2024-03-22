@@ -57,10 +57,10 @@ const rendering = async () => {
     seeding: participants,
     settings: {
       seedOrdering: ["natural"], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
-      balanceByes: false, // 是否平均分配輪空
+      balanceByes: false, // 是否平均分配輪空 避免bye+bye狀況出現
       size: size,
       matchesChildCount: 0,
-      consolationFinal: false // 雙敗淘汰賽 冠軍賽 勝方必定要輸兩場
+      consolationFinal: true // 是否要比出三四名
     }
   });
   const tournamentData = await manager.get.stageData(0);
