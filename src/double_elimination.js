@@ -140,7 +140,7 @@ function onMatchClicked(bracketsViewer, elementString) {
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
 
-            console.log(helpers.getFractionOfFinal(1,2))
+            // console.log(helpers.getFractionOfFinal(1,2))
         }
     }
 }
