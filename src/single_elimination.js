@@ -2,7 +2,7 @@ import { InMemoryDatabase } from 'brackets-memory-db'
 import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
-import { renderScore } from './utils'
+import { renderMatchScore, asyncForEach } from './utils'
 
 // ParticipantResult
 // id: number | null 如果是null 則參與者待訂
@@ -107,6 +107,7 @@ async function initBracketsViewer(elementString, tournamentData = null) {
 async function renderBracketsViewer(elementString, tournamentData) {
     // 渲染前必須清除畫面元素
     clearViewElement(elementString)
+    console.log('render start')
 
     bracketsViewer.render(
         {
@@ -147,35 +148,111 @@ function setParticipantImages(tournamentData) {
 function onMatchClicked(bracketsViewer, elementString) {
     bracketsViewer.onMatchClicked = async match => {
         // 新的成績
-        const newMatchData = () => ({
-            id: match.id,
-            ...renderScore(match.opponent1, match.opponent2)
-        })
+        const newMatchData = () => renderMatchScore(match)
+
+        console.log(match)
 
         // Match 沒有凍結才可以輸入成績
         if (!helpers.isMatchUpdateLocked(match)) {
-            const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, newMatchData())
+            console.log(1)
+            const tournamentData = await updateTournamentMatch(
+                bracketsViewer.stage.id,
+                newMatchData()
+            )
 
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
+            return
         }
 
-        console.log('新的成績',newMatchData())
         // 淘汰賽 且完成賽事
         if (!helpers.isRoundRobin(bracketsViewer.stage) && helpers.isMatchWinCompleted(match)) {
-            console.log('淘汰賽且完成賽事')
+            // const newMatchData_ = newMatchData()
+
+            // let oldWinnerId = helpers.getWinner(match).id
+            // let newWinnerId = helpers.getWinner(newMatchData_).id
+
             // 如果勝方沒變 只要更新賽事成績即可
-            console.log(helpers.getWinner(newMatchData()))
-            console.log(helpers.getWinner(match))
+
+            // console.log('下一場比賽：', await manager.find.nextMatches(match.id))
+
+            // if (oldWinnerId === newWinnerId) {
+            //     console.log('勝方沒變')
+
+            //     console.log(match)
+
+            //     const tournamentData = await updateTournamentMatchScore(
+            //         bracketsViewer.stage.id,
+            //         match,
+            //         newMatchData_
+            //     )
+
+            //     console.log(tournamentData)
+
+            //     // 更新後重新渲染畫面
+            //     renderBracketsViewer(elementString, tournamentData)
+            //     return
+            // }
+
+            // 勝方改變 需要清除被影響的match
+
+            cleanNextTournamentMatch(match.id)
         }
     }
 }
 
-async function updateTournamentMatch(tournament_id, data) {
+async function updateTournamentMatch(tournament_id, matchData) {
     try {
-        await manager.update.match(data)
+        await manager.update.match(matchData)
+        return await manager.get.stageData(tournament_id)
+    } catch (error) {
+        console.log(error, matchData)
+    }
+}
+
+const resetBtnElement = document.querySelector('.reset-btn')
+resetBtnElement.onclick = e => {
+    console.log(manager.get.finalStandings(0)) // 獲得最終排名
+    // updateTournamentMatch(0, 0)
+}
+
+async function resetTournamentMatch(tournament_id, matchId) {
+    console.log(matchId)
+    try {
+        await manager.reset.matchResults(matchId)
         return await manager.get.stageData(tournament_id)
     } catch (error) {
         console.log(error)
     }
 }
+
+async function cleanNextTournamentMatch(matchId) {
+    const nextMatchs = await manager.find.nextMatches(matchId)
+    // console.log(nextMatchs)
+    asyncForEach(nextMatchs, async match => {
+        console.log(match.id)
+        // if (helpers.isMatchUpdateLocked(match)) {
+        //     console.log('無法更新', match)
+        // } else {
+        const tournamentData = await updateTournamentMatch(0, {
+            id: match.id,
+            opponent1: {},
+            opponent2: {}
+        })
+        // }
+        await renderBracketsViewer('.brackets-viewer', tournamentData)
+    })
+}
+
+// async function updateTournamentMatchScore(tournament_id, newMatch, match) {
+//     console.log(match)
+//     console.log(helpers.getNextSide())
+//     try {
+//         await helpers.resetNextOpponent()
+//         await helpers.setScores(newMatch, match)
+//         // await manager.reset.matchResults(match.id)
+//         return await manager.get.stageData(tournament_id)
+//     } catch (error) {
+//         console.log(error)
+//     }
+// }

@@ -2,7 +2,7 @@ import { InMemoryDatabase } from 'brackets-memory-db'
 import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
-import { renderScore } from './utils'
+import { renderMatchScore } from './utils'
 
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
@@ -155,7 +155,7 @@ function onMatchClicked(bracketsViewer, elementString) {
         if (!helpers.isMatchUpdateLocked(match)) {
             const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, {
                 id: match.id,
-                ...renderScore()
+                ...renderMatchScore()
             })
 
             // 更新後重新渲染畫面
