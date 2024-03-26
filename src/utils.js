@@ -35,3 +35,9 @@ export async function asyncForEach(array, callback) {
         await callback(array[index], index, array)
     }
 }
+
+// 清除element中的所有元素
+export function clearViewElement(elementString) {
+    const bracketsViewerNode = document.querySelector(elementString)
+    bracketsViewerNode?.replaceChildren()
+}

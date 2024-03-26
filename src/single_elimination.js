@@ -2,7 +2,8 @@ import { InMemoryDatabase } from 'brackets-memory-db'
 import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
-import { renderMatchScore, asyncForEach } from './utils'
+import { renderMatchScore, asyncForEach, clearViewElement } from './utils'
+import { participants_4 } from './data'
 
 // ParticipantResult
 // id: number | null 如果是null 則參與者待訂
@@ -14,66 +15,47 @@ import { renderMatchScore, asyncForEach } from './utils'
 // opponent1: { score: 0, result: '' },
 // opponent2: { score: 0, result: '', forfeit: true }
 
+// match status
+/** 这两场比赛还没有完成。 */
+// Locked = 0
+/** 一名參與者已準備好並等待另一名參與者。 */
+// Waiting = 1
+/** 雙方參與者都已準備好開始。 */
+// Ready = 2
+/** 比賽正在進行中。 */
+// Running = 3
+/** 比賽結束。 */
+// Completed = 4
+/** 至少有一名參與者完成了下一場比賽。 */
+// Archived = 5
+
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
 
-const size = 8 // 4 / 8 | 16 | 32 | 64 | 128
-// 注入參賽隊伍資料
-const participants = [
-    {
-        id: 1,
-        tournament_id: 0,
-        name: '威廉'
-    },
-    {
-        id: 2,
-        tournament_id: 0,
-        name: '凱恩'
-    },
-    {
-        id: 3,
-        tournament_id: 0,
-        name: '約翰'
-    },
-    {
-        id: 4,
-        tournament_id: 0,
-        name: '亨利'
-    },
-    {
-        id: 5,
-        tournament_id: 0,
-        name: '西卡'
-    },
-    {
-        id: 6,
-        tournament_id: 0,
-        name: '特斯拉'
-    },
-    {
-        id: 7,
-        tournament_id: 0,
-        name: '愛迪生'
-    }
-]
+const TOURNAMENT_ID = 0
+const PARTICIPANTS = participants_4
+const ELEMENT_STRING = '.brackets-viewer'
+const STAGE_TYPE = 'single_elimination'  // "single_elimination", "double_elimination", "round_robin"
+const SIZE = 4 // 4 / 8 | 16 | 32 | 64 | 128
 
-// 創建賽事管理者 createBracketsManager return一個tournamentData
-const tournamentData = await createBracketsManager(0)
+// 創建賽事管理者 createBracketsManager
+await createBracketsManager(TOURNAMENT_ID)
 // 1. 利用// tournamentData.match 創建後端match資料表
 
 // 2. 渲染賽程圖
-initBracketsViewer('.brackets-viewer', tournamentData)
+initBracketsViewer(ELEMENT_STRING, await getStageData(TOURNAMENT_ID))
 
+// 創建賽程管理工具
 async function createBracketsManager(tournamentId) {
     await manager.create.stage({
         name: '雙敗淘汰賽測試',
         tournamentId: tournamentId, // 賽事ID
-        type: 'single_elimination', // "single_elimination", "double_elimination", "round_robin"
-        seeding: participants,
+        type: STAGE_TYPE, // "single_elimination", "double_elimination", "round_robin"
+        seeding: PARTICIPANTS,
         settings: {
             seedOrdering: ['natural'], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
             balanceByes: false, // 是否平均分配輪空
-            size: size, // 淘汰賽尺寸
+            size: SIZE, // 淘汰賽尺寸
             consolationFinal: true, // 半決賽負者之間可選的決賽
             skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
             matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
@@ -85,10 +67,9 @@ async function createBracketsManager(tournamentId) {
             consolationFinal: true // 是否要比出三四名
         }
     })
-
-    return await manager.get.stageData(tournamentId) // 用tournamentId獲取階段數據 為一個Promise
 }
 
+// 初始化賽程圖
 async function initBracketsViewer(elementString, tournamentData = null) {
     // 渲染前必須清除畫面元素
     clearViewElement(elementString)
@@ -104,11 +85,13 @@ async function initBracketsViewer(elementString, tournamentData = null) {
     renderBracketsViewer(elementString, tournamentData)
 }
 
+// 渲染賽程圖(更新資料用)
 async function renderBracketsViewer(elementString, tournamentData) {
     // 渲染前必須清除畫面元素
     clearViewElement(elementString)
-    console.log('render start')
+    // console.log('render start')
 
+    // bracketsViewer 依賴 bracketsManager 的資料做渲染
     bracketsViewer.render(
         {
             stages: tournamentData?.stage,
@@ -118,7 +101,7 @@ async function renderBracketsViewer(elementString, tournamentData) {
         },
         {
             clear: true, // 使否清除之前的資料
-            selector: elementString,
+            selector: elementString, // 渲染在哪個element
             participantOriginPlacement: 'before', // "none" | "before" | "after" UI設定: id的位置
             separatedChildCountLabel: true, // 顯示每個session上的label
             showSlotsOrigin: true, // 是否顯示槽的來源（只要可能）
@@ -129,11 +112,7 @@ async function renderBracketsViewer(elementString, tournamentData) {
     )
 }
 
-function clearViewElement(elementString) {
-    const bracketsViewerNode = document.querySelector(elementString)
-    bracketsViewerNode?.replaceChildren()
-}
-
+// 注入球員大頭照
 function setParticipantImages(tournamentData) {
     bracketsViewer.setParticipantImages(
         tournamentData.participant.map(participant => {
@@ -145,20 +124,30 @@ function setParticipantImages(tournamentData) {
     )
 }
 
+async function updateFinalResult(match){
+  console.log(match)
+}
+
+// 點擊match事件處理
 function onMatchClicked(bracketsViewer, elementString) {
     bracketsViewer.onMatchClicked = async match => {
         // 新的成績
         const newMatchData = () => renderMatchScore(match)
 
-        console.log(match)
+        console.log(match.status)
+        if(match.id == 2 && match.status == 5) {
+          console.log('-----------------')
+          // 決賽、三四名 更新會錯誤 需要額外處理
+          console.log(await helpers.setScores(match, renderMatchScore(match)))
+          // console.log(await getStageData(TOURNAMENT_ID))
+        }
+
 
         // Match 沒有凍結才可以輸入成績
         if (!helpers.isMatchUpdateLocked(match)) {
-            console.log(1)
-            const tournamentData = await updateTournamentMatch(
-                bracketsViewer.stage.id,
-                newMatchData()
-            )
+            console.log('-----更新成績-----')
+            await updateTournamentMatch(newMatchData())
+            const tournamentData = await getStageData(TOURNAMENT_ID)
 
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
@@ -167,6 +156,8 @@ function onMatchClicked(bracketsViewer, elementString) {
 
         // 淘汰賽 且完成賽事
         if (!helpers.isRoundRobin(bracketsViewer.stage) && helpers.isMatchWinCompleted(match)) {
+            console.log('-----當淘汰賽事已完成-----')
+
             // const newMatchData_ = newMatchData()
 
             // let oldWinnerId = helpers.getWinner(match).id
@@ -195,25 +186,39 @@ function onMatchClicked(bracketsViewer, elementString) {
             // }
 
             // 勝方改變 需要清除被影響的match
+            await cleanNextTournamentMatchByElimination(match.id)
 
-            cleanNextTournamentMatch(match.id)
+            await updateTournamentMatch(newMatchData())
+            const tournamentData = await getStageData(TOURNAMENT_ID)
+
+            // 更新後重新渲染畫面
+            renderBracketsViewer(elementString, tournamentData)
+
+            return
         }
     }
 }
 
-async function updateTournamentMatch(tournament_id, matchData) {
+async function updateTournamentMatch(matchData) {
     try {
         await manager.update.match(matchData)
-        return await manager.get.stageData(tournament_id)
     } catch (error) {
         console.log(error, matchData)
     }
 }
 
-const resetBtnElement = document.querySelector('.reset-btn')
-resetBtnElement.onclick = e => {
-    console.log(manager.get.finalStandings(0)) // 獲得最終排名
-    // updateTournamentMatch(0, 0)
+async function getStageData(tournament_id) {
+    return await manager.get.stageData(tournament_id)
+}
+
+const resultBtnElement = document.querySelector('.result-btn')
+const getDataBtnElement = document.querySelector('.get-data-btn')
+resultBtnElement.onclick = async e => {
+    const result = await manager.get.finalStandings(TOURNAMENT_ID)
+    console.log(result) // 獲得最終排名
+}
+getDataBtnElement.onclick = async e => {
+    console.log(await manager.get.stageData(TOURNAMENT_ID))
 }
 
 async function resetTournamentMatch(tournament_id, matchId) {
@@ -226,33 +231,48 @@ async function resetTournamentMatch(tournament_id, matchId) {
     }
 }
 
-async function cleanNextTournamentMatch(matchId) {
-    const nextMatchs = await manager.find.nextMatches(matchId)
-    // console.log(nextMatchs)
-    asyncForEach(nextMatchs, async match => {
-        console.log(match.id)
-        // if (helpers.isMatchUpdateLocked(match)) {
-        //     console.log('無法更新', match)
-        // } else {
-        const tournamentData = await updateTournamentMatch(0, {
-            id: match.id,
-            opponent1: {},
-            opponent2: {}
-        })
-        // }
-        await renderBracketsViewer('.brackets-viewer', tournamentData)
+// 淘汰賽中 清除影響到的下一場賽事
+// 通常用在更新成績前，需要清除影響到的上層腳位
+async function cleanNextTournamentMatchByElimination(matchId) {
+    // 獲得所有關連賽事
+    const nextMatches = await findAllNextMatches(matchId, [], 'DESC')
+
+    await asyncForEach(nextMatches, async match => {
+        if (helpers.isMatchCompleted(match)) {
+            await updateTournamentMatch(getEmptyMatchResult(match.id))
+            await renderBracketsViewer(ELEMENT_STRING, await manager.get.stageData(TOURNAMENT_ID))
+        }
     })
 }
 
-// async function updateTournamentMatchScore(tournament_id, newMatch, match) {
-//     console.log(match)
-//     console.log(helpers.getNextSide())
-//     try {
-//         await helpers.resetNextOpponent()
-//         await helpers.setScores(newMatch, match)
-//         // await manager.reset.matchResults(match.id)
-//         return await manager.get.stageData(tournament_id)
-//     } catch (error) {
-//         console.log(error)
-//     }
-// }
+// 尋找淘汰賽中，所有上層的賽事
+async function findAllNextMatches(matchId, reduce = [], sort = 'ASC') {
+    const result = reduce // 結果
+    const nextMatches = await manager.find.nextMatches(matchId)
+
+    // 若有找到下一場 則繼續用下一場 搜索下一場
+    if (nextMatches.length == 1) {
+        result.push(nextMatches[0])
+        return await findAllNextMatches(nextMatches[0].id, result, sort)
+    }
+
+    // 若下一場有複數場 代表已經到冠亞賽
+    if (nextMatches.length > 1) {
+        result.push(...nextMatches)
+    }
+
+    // 用id倒敘 回傳預期從最新
+    if (sort === 'DESC') result.sort((a, b) => b.id - a.id)
+
+    // 回傳結果
+    return result
+}
+
+// 獲取空的Match成績資格式
+function getEmptyMatchResult(matchId) {
+    return {
+        id: matchId,
+        opponent1: {},
+        opponent2: {}
+    }
+}
