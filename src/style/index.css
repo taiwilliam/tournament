@@ -1,0 +1,11 @@
+section.group {
+  display: grid
+}
+
+section.group article.round{
+  order: 1;
+}
+
+section.group table{
+  order: 0;
+}

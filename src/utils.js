@@ -41,3 +41,13 @@ export function clearViewElement(elementString) {
     const bracketsViewerNode = document.querySelector(elementString)
     bracketsViewerNode?.replaceChildren()
 }
+
+// 獲取空的Match成績資格式
+export function getEmptyMatchResult(matchId) {
+    return {
+        id: matchId,
+        opponent1: {},
+        opponent2: {}
+    }
+}
+

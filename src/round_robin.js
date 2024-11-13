@@ -3,81 +3,54 @@ import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
 import { renderMatchScore } from './utils'
+import { participants_16, group_data } from './data'
+import TeamGrouper from './roundRobin'
+
+const group = new TeamGrouper({
+    teams: group_data,
+    groupNum: 4,
+    sort: 'r',
+    constraints: [
+        [1, 2, 3, 5],
+        [4, 6, 7, 8],
+        [11, 12 , 13, 14],
+    ]
+})
+
+console.log(group.create(), participants_16)
 
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
 
-const size = 9 // 4 / 8 | 16 | 32 | 64 | 128
+const TOURNAMENT_ID = 0
 // 注入參賽隊伍資料
-const participants = [
-    {
-        id: 1,
-        tournament_id: 0,
-        name: '威廉'
-    },
-    {
-        id: 2,
-        tournament_id: 0,
-        name: '凱恩'
-    },
-    {
-        id: 3,
-        tournament_id: 0,
-        name: '約翰'
-    },
-    {
-        id: 4,
-        tournament_id: 0,
-        name: '亨利'
-    },
-    {
-        id: 5,
-        tournament_id: 0,
-        name: '西卡'
-    },
-    {
-        id: 6,
-        tournament_id: 0,
-        name: '特斯拉'
-    },
-    {
-        id: 7,
-        tournament_id: 0,
-        name: '愛迪生'
-    },
-    {
-        id: 8,
-        tournament_id: 0,
-        name: '龔利'
-    },
-    {
-        id: 9,
-        tournament_id: 0,
-        name: '亭妤'
-    }
-]
+const PARTICIPANTS = participants_16
+const ELEMENT_STRING = '.brackets-viewer'
+const STAGE_TYPE = 'round_robin'
+const SIZE = 16 // 4 / 8 | 16 | 32 | 64 | 128
 
 // 1. 創建賽事管理者 createBracketsManager return一個tournamentData
-const tournamentData = await createBracketsManager(0)
+await createBracketsManager(TOURNAMENT_ID)
 
 // 2. 利用// tournamentData.match 創建後端match資料表
-console.log(tournamentData.match) // 這筆資料需要存進draw欄位
+console.log(await getStageData(TOURNAMENT_ID))
 
 // 3. 渲染賽程圖
-initBracketsViewer('.brackets-viewer', tournamentData)
+initBracketsViewer(ELEMENT_STRING, await getStageData(TOURNAMENT_ID))
 
 async function createBracketsManager(tournamentId) {
-    await manager.create.stage({
+    // await manager.create.stage({
+    await manager.create({
         name: '循環賽測試',
         tournamentId: tournamentId, // 賽事ID
-        type: 'round_robin', // "single_elimination", "double_elimination", "round_robin"
-        seeding: participants,
+        type: STAGE_TYPE, // "single_elimination", "double_elimination", "round_robin"
+        seeding: PARTICIPANTS,
         settings: {
             seedOrdering: ['natural'], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
             balanceByes: false, // 是否平均分配輪空
-            size: size, // 淘汰賽尺寸，循環賽總人數
-            groupCount: 2, // 分成幾組 round_robin 專用
-            roundRobinMode: 'simple', // simple:單循環、double: 雙循環
+            size: SIZE, // 淘汰賽尺寸，循環賽總人數
+            groupCount: 4, // 分成幾組 round_robin 專用
+            roundRobinMode: 'double', // simple:單循環、double: 雙循環
             grandFinal: 'double', // 使否決賽勝方要打兩場
             matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
             consolationFinal: 'double'
@@ -86,8 +59,6 @@ async function createBracketsManager(tournamentId) {
             // - If `double` 勝者如果輸了，則可以再次進行決賽
         }
     })
-
-    return await manager.get.stageData(tournamentId) // 用tournamentId獲取階段數據 為一個Promise
 }
 
 async function initBracketsViewer(elementString, tournamentData = null) {
@@ -151,24 +122,42 @@ function setParticipantImages(tournamentData) {
 
 function onMatchClicked(bracketsViewer, elementString) {
     bracketsViewer.onMatchClicked = async match => {
+        // 新的成績
+        const newMatchData = () => renderMatchScore(match)
+        console.log(match)
+
         // Match 沒有凍結才可以輸入成績
         if (!helpers.isMatchUpdateLocked(match)) {
-            const tournamentData = await updateTournamentMatch(bracketsViewer.stage.id, {
-                id: match.id,
-                ...renderMatchScore()
-            })
+            console.log('-----更新成績-----')
+            await updateTournamentMatch(newMatchData())
+            const tournamentData = await getStageData(TOURNAMENT_ID)
+            console.log(tournamentData)
 
             // 更新後重新渲染畫面
             renderBracketsViewer(elementString, tournamentData)
+            return
         }
     }
 }
 
-async function updateTournamentMatch(tournament_id, data) {
+async function updateTournamentMatch(matchData) {
     try {
-        await manager.update.match(data)
-        return await manager.get.stageData(tournament_id)
+        await manager.update.match(matchData)
     } catch (error) {
-        console.log(error)
+        console.log(error, matchData)
     }
+}
+
+async function getStageData(tournament_id) {
+    return await manager.get.stageData(tournament_id)
+}
+
+const resultBtnElement = document.querySelector('.result-btn')
+const getDataBtnElement = document.querySelector('.get-data-btn')
+resultBtnElement.onclick = async e => {
+    const result = await manager.get.finalStandings(TOURNAMENT_ID)
+    console.log(result) // 獲得最終排名
+}
+getDataBtnElement.onclick = async e => {
+    console.log(await manager.get.stageData(TOURNAMENT_ID))
 }

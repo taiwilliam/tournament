@@ -1,9 +1,10 @@
 import { InMemoryDatabase } from 'brackets-memory-db'
+// import { BracketsManager, helpers } from 'brackets-manager'
 import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
-import { renderMatchScore, asyncForEach, clearViewElement } from './utils'
-import { participants_4 } from './data'
+import { renderMatchScore, asyncForEach, clearViewElement, getEmptyMatchResult } from './utils'
+import { participants_8 } from './data'
 
 // ParticipantResult
 // id: number | null 如果是null 則參與者待訂
@@ -33,10 +34,10 @@ const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
 
 const TOURNAMENT_ID = 0
-const PARTICIPANTS = participants_4
+const PARTICIPANTS = participants_8
 const ELEMENT_STRING = '.brackets-viewer'
 const STAGE_TYPE = 'single_elimination'  // "single_elimination", "double_elimination", "round_robin"
-const SIZE = 4 // 4 / 8 | 16 | 32 | 64 | 128
+const SIZE = 8 // 4 / 8 | 16 | 32 | 64 | 128
 
 // 創建賽事管理者 createBracketsManager
 await createBracketsManager(TOURNAMENT_ID)
@@ -45,9 +46,11 @@ await createBracketsManager(TOURNAMENT_ID)
 // 2. 渲染賽程圖
 initBracketsViewer(ELEMENT_STRING, await getStageData(TOURNAMENT_ID))
 
+console.log(await getStageData(TOURNAMENT_ID))
+
 // 創建賽程管理工具
 async function createBracketsManager(tournamentId) {
-    await manager.create.stage({
+    await manager.create({
         name: '雙敗淘汰賽測試',
         tournamentId: tournamentId, // 賽事ID
         type: STAGE_TYPE, // "single_elimination", "double_elimination", "round_robin"
@@ -56,11 +59,11 @@ async function createBracketsManager(tournamentId) {
             seedOrdering: ['natural'], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
             balanceByes: false, // 是否平均分配輪空
             size: SIZE, // 淘汰賽尺寸
-            consolationFinal: true, // 半決賽負者之間可選的決賽
             skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
-            matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
-            showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
-            grandFinal: 'double',
+            matchesChildCount: 0, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
+            // showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
+            // grandFinal: 'double', 
+            // by double_elimination
             // - If `none` 則沒有總決賽
             // - If `simple` 則決賽為單場比賽，勝利者就是舞台的勝利者，勝者會變單淘汰
             // - If `double` 勝者如果輸了，則可以再次進行決賽 (更為公平，所有選手都要雙敗才會出局)
@@ -77,10 +80,11 @@ async function initBracketsViewer(elementString, tournamentData = null) {
     // 防呆
     if (!tournamentData || tournamentData.participant == null) return
 
+    // 點擊事件
+    onMatchClicked(window.bracketsViewer, elementString)
+
     // 注入球員頭貼資訊
     setParticipantImages(tournamentData)
-
-    onMatchClicked(bracketsViewer, elementString)
 
     renderBracketsViewer(elementString, tournamentData)
 }
@@ -89,7 +93,6 @@ async function initBracketsViewer(elementString, tournamentData = null) {
 async function renderBracketsViewer(elementString, tournamentData) {
     // 渲染前必須清除畫面元素
     clearViewElement(elementString)
-    // console.log('render start')
 
     // bracketsViewer 依賴 bracketsManager 的資料做渲染
     bracketsViewer.render(
@@ -100,14 +103,14 @@ async function renderBracketsViewer(elementString, tournamentData) {
             participants: tournamentData?.participant
         },
         {
-            clear: true, // 使否清除之前的資料
+            // clear: true, // 使否清除之前的資料
             selector: elementString, // 渲染在哪個element
             participantOriginPlacement: 'before', // "none" | "before" | "after" UI設定: id的位置
             separatedChildCountLabel: true, // 顯示每個session上的label
             showSlotsOrigin: true, // 是否顯示槽的來源（只要可能）
             showLowerBracketSlotsOrigin: true, // 是否顯示槽位的起源（在淘汰階段的下括號中） 雙敗淘汰適用
             highlightParticipantOnHover: true, // hover團隊路徑
-            showRankingTable: true // 循環賽階段是否顯示排名表
+            // showRankingTable: true // 循環賽階段是否顯示排名表
         }
     )
 }
@@ -134,15 +137,7 @@ function onMatchClicked(bracketsViewer, elementString) {
         // 新的成績
         const newMatchData = () => renderMatchScore(match)
 
-        console.log(match.status)
-        if(match.id == 2 && match.status == 5) {
-          console.log('-----------------')
-          // 決賽、三四名 更新會錯誤 需要額外處理
-          console.log(await helpers.setScores(match, renderMatchScore(match)))
-          // console.log(await getStageData(TOURNAMENT_ID))
-        }
-
-
+        console.log(match)
         // Match 沒有凍結才可以輸入成績
         if (!helpers.isMatchUpdateLocked(match)) {
             console.log('-----更新成績-----')
@@ -157,33 +152,6 @@ function onMatchClicked(bracketsViewer, elementString) {
         // 淘汰賽 且完成賽事
         if (!helpers.isRoundRobin(bracketsViewer.stage) && helpers.isMatchWinCompleted(match)) {
             console.log('-----當淘汰賽事已完成-----')
-
-            // const newMatchData_ = newMatchData()
-
-            // let oldWinnerId = helpers.getWinner(match).id
-            // let newWinnerId = helpers.getWinner(newMatchData_).id
-
-            // 如果勝方沒變 只要更新賽事成績即可
-
-            // console.log('下一場比賽：', await manager.find.nextMatches(match.id))
-
-            // if (oldWinnerId === newWinnerId) {
-            //     console.log('勝方沒變')
-
-            //     console.log(match)
-
-            //     const tournamentData = await updateTournamentMatchScore(
-            //         bracketsViewer.stage.id,
-            //         match,
-            //         newMatchData_
-            //     )
-
-            //     console.log(tournamentData)
-
-            //     // 更新後重新渲染畫面
-            //     renderBracketsViewer(elementString, tournamentData)
-            //     return
-            // }
 
             // 勝方改變 需要清除被影響的match
             await cleanNextTournamentMatchByElimination(match.id)
@@ -222,10 +190,8 @@ getDataBtnElement.onclick = async e => {
 }
 
 async function resetTournamentMatch(tournament_id, matchId) {
-    console.log(matchId)
     try {
         await manager.reset.matchResults(matchId)
-        return await manager.get.stageData(tournament_id)
     } catch (error) {
         console.log(error)
     }
@@ -250,6 +216,9 @@ async function findAllNextMatches(matchId, reduce = [], sort = 'ASC') {
     const result = reduce // 結果
     const nextMatches = await manager.find.nextMatches(matchId)
 
+    console.log(nextMatches)
+
+
     // 若有找到下一場 則繼續用下一場 搜索下一場
     if (nextMatches.length == 1) {
         result.push(nextMatches[0])
@@ -268,11 +237,22 @@ async function findAllNextMatches(matchId, reduce = [], sort = 'ASC') {
     return result
 }
 
-// 獲取空的Match成績資格式
-function getEmptyMatchResult(matchId) {
-    return {
-        id: matchId,
-        opponent1: {},
-        opponent2: {}
-    }
-}
+
+
+// match 淘汰賽
+
+// child_count: 0  //
+// group_id: 0  // 組別 淘汰賽沒有組別
+// id: 1  // match id
+// number: 2  // 第幾輪
+// opponent1: {
+//     i: 3  // team id
+//     position: 3
+// }
+// opponent2: {
+//     i: 4  // team id
+//     position: 4
+// }
+// round_id: 0  // 輪次 16強 8強 4強... => 0 1 2 3...
+// stage_id: 0  // 階段
+// status: 2  // 狀態
