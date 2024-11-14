@@ -1,4 +1,4 @@
-import { sort_strategy } from '../stratery'
+import { sort_strategy } from '../../stratery'
 
 // 創建循環賽分組
 // teams([{ id: number, points: number }]): 隊伍數據

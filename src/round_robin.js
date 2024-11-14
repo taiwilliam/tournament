@@ -4,20 +4,28 @@ import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
 import { renderMatchScore } from './utils'
 import { participants_16, group_data } from './data'
-import { RoundRobin } from './TournamentJS'
+import { RoundRobin, KnockoutBracket } from './TournamentJS'
 
-const group = new RoundRobin({
-    teams: group_data,
-    groupNum: 4,
-    sort: 'r',
-    constraints: [
-        [1, 2, 3, 5],
-        [4, 6, 7, 8],
-        [11, 12 , 13, 14],
-    ]
+const bracket = new KnockoutBracket({
+    teams: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+    seeds: [1,2,3,4],
+    fixedSeed: 4
 })
 
-console.log(group.create(), participants_16)
+console.log(bracket.create())
+
+// const group = new RoundRobin({
+//     teams: group_data,
+//     groupNum: 4,
+//     sort: 'r',
+//     constraints: [
+//         [1, 2, 3, 5],
+//         [4, 6, 7, 8],
+//         [11, 12 , 13, 14],
+//     ]
+// })
+
+// console.log(group.create(), participants_16)
 
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)

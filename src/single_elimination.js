@@ -4,7 +4,24 @@ import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
 import { renderMatchScore, asyncForEach, clearViewElement, getEmptyMatchResult } from './utils'
-import { participants_8 } from './data'
+import { participants_16 } from './data'
+import { RoundRobin, KnockoutBracket } from './TournamentJS'
+
+const bracket = new KnockoutBracket({
+    teams: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+    seeds: [15,11,10,1,9,12],
+    // fixedSeed: 0
+})
+const bracketData = bracket.create()
+console.log(bracket.create())
+const PARTICIPANTS_ = bracketData.map((id, index) => {
+     
+    const p = participants_16.find(participant => participant?.id === id)
+    return p ? p : null
+})
+
+console.log(PARTICIPANTS_, participants_16)
+
 
 // ParticipantResult
 // id: number | null 如果是null 則參與者待訂
@@ -34,10 +51,10 @@ const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
 
 const TOURNAMENT_ID = 0
-const PARTICIPANTS = participants_8
+const PARTICIPANTS = PARTICIPANTS_
 const ELEMENT_STRING = '.brackets-viewer'
 const STAGE_TYPE = 'single_elimination'  // "single_elimination", "double_elimination", "round_robin"
-const SIZE = 8 // 4 / 8 | 16 | 32 | 64 | 128
+const SIZE = 16 // 4 / 8 | 16 | 32 | 64 | 128
 
 // 創建賽事管理者 createBracketsManager
 await createBracketsManager(TOURNAMENT_ID)

@@ -32,7 +32,7 @@ export class RoundRobin {
         this.constraints = constraints
     }
 
-    getGroups() {
+    get() {
         return this.groups
     }
 

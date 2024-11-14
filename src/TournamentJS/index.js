@@ -1,2 +1,2 @@
 export { RoundRobin } from './RoundRobin'
-// export RoundRobin from './RoundRobin'
+export { KnockoutBracket } from './KnockoutBracket'
