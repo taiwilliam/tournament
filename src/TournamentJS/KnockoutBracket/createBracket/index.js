@@ -115,7 +115,11 @@ function generateSnakeSeedData(seedArray) {
     // 為什麼迴圈四次 因為單淘汰資料結構有點像是一個樹狀結構
     // 且樹狀結構最低單位為四個分支且要使用這樣的排序(1,4,3,2)處理
     for (let i = 0; i < SEED_UNIT; i++) {
-        result[i] = generateSnakeSeedData(result[i])
+        // 為了顯示上的需求，將最底層的奇數種子序順序反轉，顯示畫面剛好讓種子離最遠
+        const isEven = i % 2 === 0 // 是否為偶數
+        const snakeSeedData = generateSnakeSeedData(result[i])
+
+        result[i] = isEven ? snakeSeedData : snakeSeedData.reverse()
     }
 
     return result
