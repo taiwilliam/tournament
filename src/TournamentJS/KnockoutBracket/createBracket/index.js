@@ -33,7 +33,10 @@ export function createBracket(teams, seeds, fixed_seed = seeds.length) {
     // [1, 4, 3, 2, 7, 6, 5, null]
     const result = seedFlatDataSorted.filter(element => element !== undefined)
 
-    return result
+    // 視覺化資料轉換
+    const viewResult = formatViewData(result)
+
+    return viewResult
 }
 
 // 序列化最終種子陣列
@@ -115,11 +118,7 @@ function generateSnakeSeedData(seedArray) {
     // 為什麼迴圈四次 因為單淘汰資料結構有點像是一個樹狀結構
     // 且樹狀結構最低單位為四個分支且要使用這樣的排序(1,4,3,2)處理
     for (let i = 0; i < SEED_UNIT; i++) {
-        // 為了顯示上的需求，將最底層的奇數種子序順序反轉，顯示畫面剛好讓種子離最遠
-        const isEven = i % 2 === 0 // 是否為偶數
-        const snakeSeedData = generateSnakeSeedData(result[i])
-
-        result[i] = isEven ? snakeSeedData : snakeSeedData.reverse()
+        result[i] = generateSnakeSeedData(result[i])
     }
 
     return result
@@ -162,6 +161,19 @@ function snakeSortSeed(seedGroupArray) {
 
     return result
 }
+
+// 格式化視覺化資料順序
+// 針對顯示 進行資料整理(讓第一種子 第二種子 排在頭跟尾)
+function formatViewData(data) {
+    // 邏輯是 將陣列分為四等分 因為每個等分的頭就是當區塊的第一種子 也就會是這樣
+    // [[1...],[4...],[3...],[2...]]
+    // 接著只要把 偶數陣列的順序反向即可
+    // [[1...],[...4],[3...],[...2]]
+    const viewData = chunk(data, data.length / 4).map((group, i) => i % 2 === 0 ? group : group.reverse()).flat(Infinity)
+
+    return viewData
+}
+
 
 // 將陣列分割成指定大小的子陣列
 function chunk(array, size) {
