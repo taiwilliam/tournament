@@ -4,9 +4,9 @@ import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
 import { renderMatchScore } from './utils'
 import { participants_16, group_data } from './data'
-import TeamGrouper from './roundRobin'
+import { RoundRobin } from './TournamentJS'
 
-const group = new TeamGrouper({
+const group = new RoundRobin({
     teams: group_data,
     groupNum: 4,
     sort: 'r',
