@@ -1,4 +1,5 @@
 import { TYPE_ENUM } from "./constants";
+import { createTournamentManager } from "./TournamentManager";
 
 document.addEventListener('DOMContentLoaded', function () {
     const selectType = document.querySelector('.js-select-type');
@@ -22,6 +23,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData(roundForm);
         const formObject = Object.fromEntries(formData.entries());
         console.log(formObject)
+
+        console.log(createTournamentManager())
     });
 
     // 攔截 Bracket 表單的提交事件

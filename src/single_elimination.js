@@ -67,18 +67,18 @@ console.log(await getStageData(TOURNAMENT_ID))
 
 // 創建賽程管理工具
 async function createBracketsManager(tournamentId) {
-    await manager.create({
+    await manager.create.stage({
+        
         name: '雙敗淘汰賽測試',
         tournamentId: tournamentId, // 賽事ID
         type: STAGE_TYPE, // "single_elimination", "double_elimination", "round_robin"
         seeding: PARTICIPANTS,
         settings: {
+            size: SIZE, // 淘汰賽尺寸
             seedOrdering: ['natural'], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
             balanceByes: false, // 是否平均分配輪空
-            size: SIZE, // 淘汰賽尺寸
+            matchesChildCount: 3, // 循環賽階段的小組數量
             skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
-            matchesChildCount: 0, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
-            // showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
             // grandFinal: 'double', 
             // by double_elimination
             // - If `none` 則沒有總決賽
@@ -108,9 +108,6 @@ async function initBracketsViewer(elementString, tournamentData = null) {
 
 // 渲染賽程圖(更新資料用)
 async function renderBracketsViewer(elementString, tournamentData) {
-    // 渲染前必須清除畫面元素
-    clearViewElement(elementString)
-
     // bracketsViewer 依賴 bracketsManager 的資料做渲染
     bracketsViewer.render(
         {
@@ -126,6 +123,7 @@ async function renderBracketsViewer(elementString, tournamentData) {
             separatedChildCountLabel: true, // 顯示每個session上的label
             showSlotsOrigin: true, // 是否顯示槽的來源（只要可能）
             showLowerBracketSlotsOrigin: true, // 是否顯示槽位的起源（在淘汰階段的下括號中） 雙敗淘汰適用
+            showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
             highlightParticipantOnHover: true, // hover團隊路徑
             // showRankingTable: true // 循環賽階段是否顯示排名表
         }

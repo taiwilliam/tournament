@@ -48,7 +48,7 @@ initBracketsViewer(ELEMENT_STRING, await getStageData(TOURNAMENT_ID))
 
 async function createBracketsManager(tournamentId) {
     // await manager.create.stage({
-    await manager.create({
+    await manager.create.stage({
         name: '循環賽測試',
         tournamentId: tournamentId, // 賽事ID
         type: STAGE_TYPE, // "single_elimination", "double_elimination", "round_robin"

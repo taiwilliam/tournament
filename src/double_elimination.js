@@ -1,5 +1,4 @@
 import { InMemoryDatabase } from 'brackets-memory-db'
-// import { BracketsManager, helpers } from 'brackets-manager'
 import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
