@@ -163,19 +163,24 @@ export function assertRoundRobin(input: number[], output: [number, number][][]):
 
 /**
  * Distributes elements in groups of equal size.
+ * 將元素分佈在大小相等的群組中。
  *
  * @param elements A list of elements to distribute in groups.
  * @param groupCount The group count.
  */
 export function makeGroups<T>(elements: T[], groupCount: number): T[][] {
-    const groupSize = Math.ceil(elements.length / groupCount);
+    const baseGroupSize = Math.floor(elements.length / groupCount); // 每組的基本大小
+    let extraElements = elements.length % groupCount; // 無法平分的多餘元素數量
+
     const result: T[][] = [];
+    let index = 0;
 
-    for (let i = 0; i < elements.length; i++) {
-        if (i % groupSize === 0)
-            result.push([]);
+    for (let i = 0; i < groupCount; i++) {
+        const currentGroupSize = baseGroupSize + (extraElements > 0 ? 1 : 0); // 前幾組多分配一個元素
+        result.push(elements.slice(index, index + currentGroupSize));
+        index += currentGroupSize;
 
-        result[result.length - 1].push(elements[i]);
+        if (extraElements > 0) extraElements--; // 每次分配後，減少一個多餘元素
     }
 
     return result;

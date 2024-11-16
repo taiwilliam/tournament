@@ -107,6 +107,8 @@ export class StageCreator {
         const groups = await this.getRoundRobinGroups();
         const stage = await this.createStage();
 
+        console.log('groups',groups);
+
         for (let i = 0; i < groups.length; i++)
             await this.createRoundRobinGroup(stage.id, i + 1, groups[i]);
 
@@ -620,6 +622,7 @@ export class StageCreator {
 
     /**
      * Gets the duels in groups for a round-robin stage.
+     * 獲取循環賽階段中分組的對決。
      */
     private async getRoundRobinGroups(): Promise<ParticipantSlot[][]> {
         if (this.stage.settings?.groupCount === undefined || !Number.isInteger(this.stage.settings.groupCount))
@@ -643,7 +646,13 @@ export class StageCreator {
 
         const method = this.getRoundRobinOrdering();
         const slots = await this.getSlots();
-        const ordered = ordering[method](slots, this.stage.settings.groupCount);
+        const ordered = ordering[method](slots, this.stage.settings.groupCount); // ordering 排序方法策略物件
+
+        console.log('method',method);
+        console.log('slots',slots);
+        console.log('ordered',ordered);
+        console.log('this.stage.settings.groupCount',this.stage.settings.groupCount);
+
         return helpers.makeGroups(ordered, this.stage.settings.groupCount);
     }
 

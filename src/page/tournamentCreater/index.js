@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     roundForm.addEventListener('submit', function (event) {
         event.preventDefault(); // 停止表單提交
         const formData = new FormData(roundForm);
-        validateRoundForm(formData)
+        if(!validateRoundForm(formData)) return
         submitToDo(formData)
     });
 
@@ -164,11 +164,29 @@ async function submitToDo(formData) {
 // 驗證循環賽表單
 function validateRoundForm(formData) {
     const splitVal = formData.get('split')
+    const groupCount = formData.get('groupCount')
+    const teamCount = formData.get('teamCount')
+    const maxGroupCount = teamCount % 2 === 0 ? teamCount / 2 : Math.floor(teamCount / 2)
+
     // 驗證分組條件
     if (!validateSplitInput(splitVal) && splitVal !== '') {
         alert('分組條件格式不正確，請檢查後重新輸入');
-        return;
+        return false;
     }
+
+    // 驗證分組數量
+    if (groupCount === '') {
+        alert('分組數量錯誤');
+        return false;
+    }
+
+    // 驗證分組數量
+    if (groupCount > maxGroupCount) {
+        alert('每組至少需要2隊參賽');
+        return false;
+    }
+
+    return true
 }
 
 // 檢查輸入是否符合格式
