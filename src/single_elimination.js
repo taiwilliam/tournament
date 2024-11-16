@@ -108,6 +108,9 @@ async function initBracketsViewer(elementString, tournamentData = null) {
 
 // 渲染賽程圖(更新資料用)
 async function renderBracketsViewer(elementString, tournamentData) {
+    // 渲染前必須清除畫面元素
+    clearViewElement(elementString)
+    
     // bracketsViewer 依賴 bracketsManager 的資料做渲染
     bracketsViewer.render(
         {

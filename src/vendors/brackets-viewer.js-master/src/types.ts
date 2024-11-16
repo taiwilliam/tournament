@@ -2,7 +2,7 @@ import { Stage, Match, MatchGame, Participant, GroupType, FinalType, Id, StageTy
 import { CallbackFunction, FormConfiguration } from './form';
 import { InMemoryDatabase } from 'brackets-memory-db';
 import { BracketsViewer } from './main';
-import { BracketsManager } from 'brackets-manager';
+import { BracketsManager } from '../../brackets-manager.js-master/src';
 import { ToI18nKey, Translator } from './lang';
 
 declare global {
@@ -15,13 +15,13 @@ declare global {
     }
 
     interface HTMLElement {
-        togglePopover: () => void
+        togglePopover: (force?: boolean | undefined) => boolean
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/API/ToggleEvent
     interface ToggleEvent extends Event {
-        oldState: 'open' | 'closed'
-        newState: 'open' | 'closed'
+        readonly oldState: string
+        readonly newState: string
     }
 }
 

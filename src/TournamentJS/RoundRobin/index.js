@@ -21,15 +21,11 @@ export class RoundRobin {
         }
 
         this.teams = teams;
-        this.groupNum = groupNum;
+        this.groupNum = Number(groupNum);
         this.sort = sort;
-        this.sortKey = sortKey;
+        this.sortKey = String(sortKey);
         this.constraints = constraints;
         this.groups = [];
-    }
-
-    updateConstraints(constraints) {
-        this.constraints = constraints
     }
 
     get() {

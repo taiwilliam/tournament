@@ -1,31 +1,33 @@
 import { InMemoryDatabase } from 'brackets-memory-db'
-import { BracketsManager, helpers } from 'brackets-manager'
+import { BracketsManager, helpers } from './vendors/brackets-manager.js-master/src'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
 import { renderMatchScore } from './utils'
 import { participants_16, group_data } from './data'
 import { RoundRobin, KnockoutBracket } from './TournamentJS'
 
-const bracket = new KnockoutBracket({
-    teams: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
-    seeds: [1,2,3,4],
-    fixedSeed: 4
-})
-
-console.log(bracket.create())
-
-// const group = new RoundRobin({
-//     teams: group_data,
-//     groupNum: 4,
-//     sort: 'r',
-//     constraints: [
-//         [1, 2, 3, 5],
-//         [4, 6, 7, 8],
-//         [11, 12 , 13, 14],
-//     ]
+// const bracket = new KnockoutBracket({
+//     teams: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+//     seeds: [1,2,3,4],
+//     fixedSeed: 4
 // })
 
-// console.log(group.create(), participants_16)
+// console.log(bracket.create())
+
+console.log(group_data)
+
+const group = new RoundRobin({
+    teams: group_data,
+    groupNum: 1,
+    sort: 's',
+    // constraints: [
+    //     [1, 2, 3, 5],
+    //     [4, 6, 7, 8],
+    //     [11, 12 , 13, 14],
+    // ]
+})
+
+console.log(group.create())
 
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
@@ -57,7 +59,7 @@ async function createBracketsManager(tournamentId) {
             seedOrdering: ['natural'], // 種子設定 natural 即是不多做排序 指參照participants順序， "reverse_half_shift", "reverse"
             balanceByes: false, // 是否平均分配輪空
             size: SIZE, // 淘汰賽尺寸，循環賽總人數
-            groupCount: 4, // 分成幾組 round_robin 專用
+            groupCount: 5, // 分成幾組 round_robin 專用
             roundRobinMode: 'double', // simple:單循環、double: 雙循環
             grandFinal: 'double', // 使否決賽勝方要打兩場
             matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝

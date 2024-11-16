@@ -3,7 +3,7 @@ import { BracketsManager, helpers } from 'brackets-manager'
 import 'brackets-viewer/dist/brackets-viewer.min.js'
 import 'brackets-viewer/dist/brackets-viewer.min.css'
 import { renderMatchScore, asyncForEach, clearViewElement, getEmptyMatchResult } from './utils'
-import { participants_16 } from './data'
+import { participants_8 } from './data'
 
 // ParticipantResult
 // id: number | null 如果是null 則參與者待訂
@@ -33,10 +33,10 @@ const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
 
 const TOURNAMENT_ID = 0
-const PARTICIPANTS = participants_16
+const PARTICIPANTS = participants_8
 const ELEMENT_STRING = '.brackets-viewer'
 const STAGE_TYPE = 'double_elimination'  // "single_elimination", "double_elimination", "round_robin"
-const SIZE = 16 // 4 / 8 | 16 | 32 | 64 | 128
+const SIZE = 8 // 4 / 8 | 16 | 32 | 64 | 128
 
 // 創建賽事管理者 createBracketsManager
 await createBracketsManager(TOURNAMENT_ID)
@@ -57,10 +57,10 @@ async function createBracketsManager(tournamentId) {
             balanceByes: false, // 是否平均分配輪空
             size: SIZE, // 淘汰賽尺寸
             consolationFinal: true, // 半決賽負者之間可選的決賽
-            skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
+            skipFirstRound: true, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
             matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
             showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
-            grandFinal: 'double',
+            grandFinal: 'simple',
             // - If `none` 則沒有總決賽
             // - If `simple` 則決賽為單場比賽，勝利者就是舞台的勝利者，勝者會變單淘汰
             // - If `double` 勝者如果輸了，則可以再次進行決賽 (更為公平，所有選手都要雙敗才會出局)

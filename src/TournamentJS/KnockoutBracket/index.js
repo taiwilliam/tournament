@@ -15,9 +15,11 @@ export class KnockoutBracket {
             throw new Error('The number of teams must be greater than 1.');
         }
 
+        const fixedSeed_ = fixedSeed ? Number(fixedSeed) : seeds.length
+
         this.teams = teams;
         this.seeds = seeds;
-        this.fixedSeed = fixedSeed;
+        this.fixedSeed = fixedSeed_;
         this.bracket = [];
     }
 
