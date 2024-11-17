@@ -81,8 +81,7 @@ export function createBracketsViewer() {
     return new BracketsViewer()
 }
 
-export function renderTournamentViewer(viewer, elementString, tournamentData) {
-    console.log(tournamentData)
+export function renderTournamentViewer(viewer, elementString, tournamentData, config) {
     return viewer.render(
         {
             stages: tournamentData?.stage,
@@ -91,12 +90,9 @@ export function renderTournamentViewer(viewer, elementString, tournamentData) {
             participants: tournamentData?.participant
         },
         {
-            onMatchClick: (...arg) => {
-                console.log('onMatchClick', arg)
-            },
-            onMatchLabelClick: () => {
-                console.log('onMatchLabelClick', arg)
-            },
+            onMatchClick: () => {},
+            onMatchLabelClick: () => {},
+            customRoundName: (arg) => setCustomRoundName(arg),
             clear: true, // 使否清除之前的資料
             selector: elementString,
             participantOriginPlacement: 'before', // "none" | "before" | "after" UI設定: id的位置
@@ -105,7 +101,8 @@ export function renderTournamentViewer(viewer, elementString, tournamentData) {
             showLowerBracketSlotsOrigin: true, // 是否顯示槽位的起源（在淘汰階段的下括號中） 雙敗淘汰適用
             highlightParticipantOnHover: true, // hover團隊路徑
             showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
-            showRankingTable: true // 循環賽階段是否顯示排名表
+            showRankingTable: true, // 循環賽階段是否顯示排名表
+            ...config // 透過config設定
         }
     )
 }
@@ -119,4 +116,49 @@ function clearViewElement(elementString) {
 // 取得賽事資料
 async function getStageData(manager, tournament_id) {
     return await manager.get.stageData(tournament_id)
+}
+
+// 注入球員大頭照
+export function setParticipantImages(viewer, tournamentData, participantImagesArray) {
+    return viewer.setParticipantImages(
+        tournamentData.participant.map(participant => {
+            const renderInt = Math.floor(Math.random() * 20) + 1;
+            return {
+                participantId: participant.id,
+                imageUrl: `https://mighty.tools/mockmind-api/content/human/${renderInt}.jpg`
+            }
+        })
+    )
+}
+
+
+// 更新比賽成績
+export async function updateTournamentMatch(manager, matchData) {
+    try {
+        await manager.update.match(matchData)
+    } catch (error) {
+        console.log(error, matchData)
+    }
+}
+
+
+// 設定roundRobinMode
+function setCustomRoundName(arg) {
+    const { 
+        fractionOfFinal, // 決賽階段的比例
+        finalType, // 決賽階段的類型 grand-final
+        groupType, // 賽制
+        roundCount, // 淘汰賽用總共幾輪
+        roundNumber // 第幾輪
+    } = arg
+
+    const ROUND_NAME_STRATEGY = {
+        'round-robin': () => `第 ${roundNumber} 回合`, // 循環賽
+        'single-bracket': () => {}, // 單敗淘汰賽
+        'winner-bracket': () => {}, // 雙敗淘汰賽 - 勝部
+        'loser-bracket': () => {}, // 雙敗淘汰賽 - 敗部
+        'final-group': () => {}, // 決賽
+    }
+    // todo: 未完成，待i18翻譯後再補上
+    // return ROUND_NAME_STRATEGY[groupType](arg)
 }

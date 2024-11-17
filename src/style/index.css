@@ -1,11 +1,13 @@
-section.group {
-  display: grid
+
+.brackets-viewer section.group {
+  display: grid;
+  align-content: baseline;
 }
 
-section.group article.round{
+.brackets-viewer section.group article.round{
   order: 1;
 }
 
-section.group table{
+.brackets-viewer section.group table{
   order: 0;
 }

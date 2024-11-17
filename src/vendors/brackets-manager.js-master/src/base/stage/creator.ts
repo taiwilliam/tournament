@@ -107,8 +107,6 @@ export class StageCreator {
         const groups = await this.getRoundRobinGroups();
         const stage = await this.createStage();
 
-        console.log('groups',groups);
-
         for (let i = 0; i < groups.length; i++)
             await this.createRoundRobinGroup(stage.id, i + 1, groups[i]);
 
@@ -647,11 +645,6 @@ export class StageCreator {
         const method = this.getRoundRobinOrdering();
         const slots = await this.getSlots();
         const ordered = ordering[method](slots, this.stage.settings.groupCount); // ordering 排序方法策略物件
-
-        console.log('method',method);
-        console.log('slots',slots);
-        console.log('ordered',ordered);
-        console.log('this.stage.settings.groupCount',this.stage.settings.groupCount);
 
         return helpers.makeGroups(ordered, this.stage.settings.groupCount);
     }

@@ -1,7 +1,6 @@
 import { InMemoryDatabase } from 'brackets-memory-db'
 import { BracketsManager, helpers } from 'brackets-manager'
-import 'brackets-viewer/dist/brackets-viewer.min.js'
-import 'brackets-viewer/dist/brackets-viewer.min.css'
+import { BracketsViewer } from './vendors/brackets-viewer.js-master/src'
 import { renderMatchScore, asyncForEach, clearViewElement, getEmptyMatchResult } from './utils'
 import { participants_8 } from './data'
 
@@ -28,6 +27,8 @@ import { participants_8 } from './data'
 // Completed = 4
 /** 至少有一名參與者完成了下一場比賽。 */
 // Archived = 5
+
+window.bracketsViewer = new BracketsViewer()
 
 const storage = new InMemoryDatabase()
 const manager = new BracketsManager(storage)
@@ -60,7 +61,7 @@ async function createBracketsManager(tournamentId) {
             skipFirstRound: true, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部
             matchesChildCount: 3, //顯示幾戰幾勝 中的幾勝 BO1、BO3、BO5 ， BO3即五戰三勝
             showPopoverOnMatchLabelClick: true, // 點擊label 出現彈窗
-            grandFinal: 'simple',
+            grandFinal: 'double',
             // - If `none` 則沒有總決賽
             // - If `simple` 則決賽為單場比賽，勝利者就是舞台的勝利者，勝者會變單淘汰
             // - If `double` 勝者如果輸了，則可以再次進行決賽 (更為公平，所有選手都要雙敗才會出局)
@@ -101,6 +102,7 @@ async function renderBracketsViewer(elementString, tournamentData) {
         },
         {
             // clear: true, // 使否清除之前的資料
+            customRoundName: (arg) => console.log(arg),
             selector: elementString, // 渲染在哪個element
             participantOriginPlacement: 'before', // "none" | "before" | "after" UI設定: id的位置
             separatedChildCountLabel: true, // 顯示每個session上的label

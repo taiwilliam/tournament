@@ -115,3 +115,11 @@ export const viewerConfig = {
   // 是否清除先前顯示的所有數據
   clear: true,
 }
+
+
+export const ROUND_NAME_STRATEGY = {
+  'round-robin': () => {}, // 循環賽
+  'single-bracket': () => {}, // 單敗淘汰賽
+  'winner-bracket': () => {}, // 雙敗淘汰賽 - 勝部
+  'loser-bracket': () => {}, // 雙敗淘汰賽 - 敗部
+}
