@@ -13,14 +13,14 @@ export class Update extends BaseUpdater {
      *
      * @param match Values to change in a match.
      */
-    public async match<M extends Match = Match>(match: DeepPartial<M>): Promise<void> {
+    public async match<M extends Match = Match>(match: DeepPartial<M>, force: boolean = false): Promise<void> {
         if (match.id === undefined)
             throw Error('No match id given.');
 
         const stored = await this.storage.select('match', match.id);
         if (!stored) throw Error('Match not found.');
 
-        await this.updateMatch(stored, match);
+        await this.updateMatch(stored, match, force);
     }
 
     /**

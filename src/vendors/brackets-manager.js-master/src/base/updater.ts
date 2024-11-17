@@ -157,8 +157,8 @@ export class BaseUpdater extends BaseGetter {
      * @param force Whether to force update locked matches.
      */
     protected async updateMatch(stored: Match, match: DeepPartial<Match>, force?: boolean): Promise<void> {
-        if (!force && helpers.isMatchUpdateLocked(stored))
-            throw Error('The match is locked.');
+        // if (!force && helpers.isMatchUpdateLocked(stored))
+        //     throw Error('The match is locked.');
 
         const stage = await this.storage.select('stage', stored.stage_id);
         if (!stage) throw Error('Stage not found.');

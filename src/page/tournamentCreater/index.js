@@ -1,5 +1,5 @@
 import { TYPE_ENUM, MODE_ENUM } from "./constants";
-import { createTournamentManager, renderTournamentViewer, createBracketsViewer, RoundRobin, KnockoutBracket, setParticipantImages, updateTournamentMatch, helpers } from "../../TournamentJS";
+import { createTournamentManager, renderTournamentViewer, createBracketsViewer, RoundRobin, KnockoutBracket, setParticipantImages, updateMatch, helpers, resetNextMatchByElimination } from "../../TournamentJS";
 import { createFakeTeamList, renderMatchScore } from "./utility";
 
 const ELEMENT_STRING = '.brackets-viewer'
@@ -165,7 +165,7 @@ async function submitToDo(formData) {
 
     const getTournamentButton = document.querySelector('.js-get-tournament-data');
     getTournamentButton.onclick = async () => {
-        const tournamentData = await manager.get.stageData(0)
+        const tournamentData = await manager.get.stageData(TOURNAMENT_ID)
         console.log('tournamentData', tournamentData)
     }
 }
@@ -180,13 +180,30 @@ function renderViewer(viewer, elementString, manager, tournamentData) {
 // 點擊比賽時的行為
 async function onMatchClick(match, viewer, manager) {
     // 創建隨機比賽資料函數，為了每次點擊重新觸發隨機函數
-    const renderMatchData = (match) => renderMatchScore(match)
+    const renderMatchData = (match_) => renderMatchScore(match_)
+
     // 更新比賽資料
-    await manager.update.match(renderMatchData(match))
+    if (helpers.isRoundRobin(viewer.stage)) {
+        // 循環賽資料更新
+        await updateMatch(renderMatchData(match), manager)
+    } else {
+        // 淘汰賽資料更新
+
+        console.log(match)
+
+        // 直接晉級的比賽不更新
+        if (helpers.isMatchByeCompleted(match)) return
+
+        // 勝方改變 需要清除被影響的match
+        // await resetNextMatchByElimination(match, manager)
+        await manager.reset.matchResults(match.id)
+
+        // 更新比賽結果
+        await updateMatch(renderMatchData(match), manager)
+    }
+
+
     // 更新比賽畫面
-    // const newMatch = {...match,...renderMatchData(match)}
-    // console.log(newMatch)
-    // await viewer.updateMatch(newMatch)
     renderViewer(viewer, ELEMENT_STRING, manager, await manager.get.stageData(0))
 }
 

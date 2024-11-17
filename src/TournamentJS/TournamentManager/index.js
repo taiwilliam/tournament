@@ -2,6 +2,7 @@ import { InMemoryDatabase } from 'brackets-memory-db'
 import { BracketsManager, helpers } from '../../vendors/brackets-manager.js-master/src'
 import { BracketsViewer } from '../../vendors/brackets-viewer.js-master/src'
 import { managerConfigSetting } from './constants'
+import { asyncForEach } from '../utility'
 
 // 創建賽程管理工具
 export async function createTournamentManager(
@@ -133,9 +134,9 @@ export function setParticipantImages(viewer, tournamentData, participantImagesAr
 
 
 // 更新比賽成績
-export async function updateTournamentMatch(manager, matchData) {
+export async function updateMatch(matchData, manager, force = false) {
     try {
-        await manager.update.match(matchData)
+        await manager.update.match(matchData, force)
     } catch (error) {
         console.log(error, matchData)
     }
@@ -162,3 +163,61 @@ function setCustomRoundName(arg) {
     // todo: 未完成，待i18翻譯後再補上
     // return ROUND_NAME_STRATEGY[groupType](arg)
 }
+
+
+
+// 淘汰賽中 清除影響到的下一場賽事
+// 通常用在更新成績前，需要清除影響到的上層腳位
+export async function resetNextMatchByElimination(match, manager) {
+    console.log('resetNextMatchByElimination')
+    // 獲得所有關聯腳位賽事
+    const nextMatches = await findAllNextMatches(match, manager)
+
+    console.log('nextMatches', nextMatches)
+
+    await asyncForEach(nextMatches, async match => {
+        // 若比賽已經完成才需要清除
+        if (helpers.isMatchCompleted(match)) {
+            console.log(match, 'need reset')
+            // console.log('resetResult', helpers.resetMatchResults(match))
+            // helpers.resetMatchResults(match)
+            await manager.reset.matchResults(match.id)
+            // await manager.reset.matchResults(match.id)
+        }
+    })
+}
+
+// 尋找淘汰賽中，所有上層的賽事
+async function findAllNextMatches(match, manager, reduce = []) {
+    const result = reduce // 結果
+    const nextMatches = await manager.find.nextMatches(match.id) // 獲取下一場賽事
+
+    console.log('findAllNextMatches nextMatches', nextMatches)
+
+    // 若有找到下一場 則繼續用下一場 搜索下一場 遞回
+    if (nextMatches.length == 1) {
+        console.log(result)
+        result.push(nextMatches[0])
+        return await findAllNextMatches(nextMatches[0], manager, result)
+    }
+
+    // 若下一場有複數場 代表已經到冠亞賽
+    if (nextMatches.length > 1) {
+        result.push(...nextMatches)
+    }
+
+    // 用id倒敘 回傳預期從最新
+    // if (sort === 'DESC') result.sort((a, b) => b.id - a.id)
+
+    // 回傳結果
+    return result
+}
+
+// // 獲取空的Match成績資格式
+// export function getEmptyMatchResult(match) {
+//     return {
+//         id: match.id,
+//         opponent1: {},
+//         opponent2: {}
+//     }
+// }
