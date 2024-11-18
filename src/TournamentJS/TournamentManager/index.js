@@ -41,7 +41,6 @@ export async function createTournamentManager(
     const manager = new BracketsManager(storage)
     // 格式化賽事參數
     const managerConfig = formatTournamentConfig(config)
-    console.log('managerConfig', managerConfig)
 
     // 使用賽事管理工具創建賽事
     await manager.create.stage(managerConfig)
@@ -169,55 +168,54 @@ function setCustomRoundName(arg) {
 // 淘汰賽中 清除影響到的下一場賽事
 // 通常用在更新成績前，需要清除影響到的上層腳位
 export async function resetNextMatchByElimination(match, manager) {
-    console.log('resetNextMatchByElimination')
     // 獲得所有關聯腳位賽事
     const nextMatches = await findAllNextMatches(match, manager)
 
-    console.log('nextMatches', nextMatches)
-
+    // 遍歷所有關聯腳位賽事
     await asyncForEach(nextMatches, async match => {
         // 若比賽已經完成才需要清除
         if (helpers.isMatchCompleted(match)) {
-            console.log(match, 'need reset')
-            // console.log('resetResult', helpers.resetMatchResults(match))
-            // helpers.resetMatchResults(match)
-            await manager.reset.matchResults(match.id)
-            // await manager.reset.matchResults(match.id)
+            // 清除比賽結果
+            await updateMatch(getEmptyMatchResult(match), manager, true)
         }
     })
 }
 
 // 尋找淘汰賽中，所有上層的賽事
-async function findAllNextMatches(match, manager, reduce = []) {
-    const result = reduce // 結果
-    const nextMatches = await manager.find.nextMatches(match.id) // 獲取下一場賽事
+async function findAllNextMatches(match, manager) {
+    const result = [] // 結果
+    
+    // 遞回尋找所有下一層賽事
+    const findAllNextMatchesRecursion = async (match, manager) => {
+        // 獲取下一場賽事
+        const nextMatches = await manager.find.nextMatches(match.id) 
 
-    console.log('findAllNextMatches nextMatches', nextMatches)
-
-    // 若有找到下一場 則繼續用下一場 搜索下一場 遞回
-    if (nextMatches.length == 1) {
-        console.log(result)
-        result.push(nextMatches[0])
-        return await findAllNextMatches(nextMatches[0], manager, result)
+        // 沒有下一場就結束遞迴
+        if (nextMatches.length == 0) return
+        
+        // 繼續尋找所有賽事直到結束
+        await asyncForEach(nextMatches, async match => {
+            if (helpers.isMatchCompleted(match)) {
+                result.push(match)
+                return await findAllNextMatchesRecursion(match, manager)
+            }
+        })
     }
 
-    // 若下一場有複數場 代表已經到冠亞賽
-    if (nextMatches.length > 1) {
-        result.push(...nextMatches)
-    }
+    // 執行遞回
+    await findAllNextMatchesRecursion(match, manager)
 
-    // 用id倒敘 回傳預期從最新
-    // if (sort === 'DESC') result.sort((a, b) => b.id - a.id)
+    console.log('findAllNextMatches', result)
 
     // 回傳結果
     return result
 }
 
-// // 獲取空的Match成績資格式
-// export function getEmptyMatchResult(match) {
-//     return {
-//         id: match.id,
-//         opponent1: {},
-//         opponent2: {}
-//     }
-// }
+// 獲取空的Match成績資格式
+export function getEmptyMatchResult(match) {
+    return {
+        id: match.id,
+        opponent1: {},
+        opponent2: {}
+    }
+}

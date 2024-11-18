@@ -189,17 +189,18 @@ async function onMatchClick(match, viewer, manager) {
     } else {
         // 淘汰賽資料更新
 
-        console.log(match)
-
         // 直接晉級的比賽不更新
         if (helpers.isMatchByeCompleted(match)) return
 
-        // 勝方改變 需要清除被影響的match
-        // await resetNextMatchByElimination(match, manager)
-        await manager.reset.matchResults(match.id)
+        // 匹配中的比賽(沒有球員)不更新
+        if (helpers.isMatchPending(match)) return
 
+        // 勝方改變 需要清除被影響的match
+        await resetNextMatchByElimination(match, manager)
+        await manager.reset.matchResults(match.id)
+        
         // 更新比賽結果
-        await updateMatch(renderMatchData(match), manager)
+        await updateMatch(renderMatchData(match), manager, true)
     }
 
 
