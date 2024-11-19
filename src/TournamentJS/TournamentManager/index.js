@@ -103,7 +103,7 @@ export function renderTournamentViewer(viewer, elementString, tournamentData, co
         },
         {
             onMatchClick: () => {},
-            onMatchLabelClick: () => {},
+            onMatchLabelClick: (arg) => console.log(arg),
             customRoundName: arg => setCustomRoundName(arg),
             clear: true, // 使否清除之前的資料
             selector: elementString,
