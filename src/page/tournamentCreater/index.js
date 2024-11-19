@@ -265,13 +265,13 @@ function setTeamNameHover() {
 
     teamsEl.forEach(element => {
         const id = element.getAttribute('data-id');
-        const target = document.querySelector(`[data-participant-id="${id}"]`);
+        const target = document.querySelectorAll(`[data-participant-id="${id}"]`);
         element.addEventListener('mouseover', () => {
-            target.classList.add('bg-gray')
+            target.forEach(e => e.classList.add('bg-gray'))
         });
     
         element.addEventListener('mouseout', () => {
-            target.classList.remove('bg-gray')
+            target.forEach(e => e.classList.remove('bg-gray'))
         });
     })
 }

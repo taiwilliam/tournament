@@ -27,3 +27,8 @@
 .bg-gray {
   background-color: #ECEFF1 !important;
 }
+
+.team-viewer {
+  position: sticky;
+  top: 0;
+}
