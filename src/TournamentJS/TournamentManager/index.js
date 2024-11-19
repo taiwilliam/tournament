@@ -7,10 +7,12 @@ import { asyncForEach } from '../utility'
 // 創建儲存庫(模擬DB)
 // stageData 有點像資料庫就是 manager.get.stageData(0) return這樣的資料
 // 未來會儲存stageData 若讀取後還想要透過manager管理 則要注入回去
-export function createStorage(stageData) {
+export function createStorage(stageData = null) {
     // InMemoryDatabase 類的作用是實現一個基於記憶體的資料庫 為了將接下來的manager物件模擬成一個資料庫
     const storage = new InMemoryDatabase()
-    if(stageData) storage.data = stageData
+
+    // 若有stageData則注入
+    if(stageData !== null) storage.data = stageData
     return storage
 }
 

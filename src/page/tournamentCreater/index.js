@@ -2,7 +2,7 @@ import { TYPE_ENUM, MODE_ENUM } from "./constants";
 import { createConfig, createStorage, createManager, renderTournamentViewer, createBracketsViewer, RoundRobin, KnockoutBracket, setParticipantImages, updateMatch, helpers, resetNextMatchByElimination } from "../../TournamentJS";
 import { createFakeTeamList, renderMatchScore } from "./utility";
 
-const ELEMENT_STRING = '.brackets-viewer'
+const ELEMENT_STRING = '.brackets-viewer' // 賽程圖顯示器的根元素 必須有這個class才能渲染
 const PREVIEW_ELEMENT_STRING = '#preview-view'
 const SHOW_ELEMENT_STRING = '#show-view'
 const TOURNAMENT_ID = 0
