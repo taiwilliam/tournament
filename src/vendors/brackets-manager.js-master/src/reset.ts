@@ -13,7 +13,6 @@ export class Reset extends BaseUpdater {
      */
     public async matchResults(matchId: Id): Promise<void> {
         const stored = await this.storage.select('match', matchId);
-        console.log(stored)
         if (!stored) throw Error('Match not found.');
 
         // The user can handle forfeits with matches which have child games in two possible ways:
@@ -39,8 +38,6 @@ export class Reset extends BaseUpdater {
         const { roundNumber, roundCount } = await this.getRoundPositionalInfo(stored.round_id);
         const matchLocation = helpers.getMatchLocation(stage.type, group.number);
         const nextMatches = await this.getNextMatches(stored, matchLocation, stage, roundNumber, roundCount);
-
-        console.log(nextMatches)
         // if (nextMatches.some(match => match && match.status >= Status.Running && !helpers.isMatchByeCompleted(match)))
         //     throw Error('The match is locked.');
 

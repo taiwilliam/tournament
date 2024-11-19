@@ -213,8 +213,6 @@ async function findAllNextMatches(match, manager) {
     // 執行遞回
     await findAllNextMatchesRecursion(match, manager)
 
-    console.log('findAllNextMatches', result)
-
     // 回傳結果
     return result
 }

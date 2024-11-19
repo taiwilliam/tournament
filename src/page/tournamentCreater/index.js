@@ -317,7 +317,7 @@ function validateRoundForm(formData) {
     const maxGroupCount = teamCount % 2 === 0 ? teamCount / 2 : Math.floor(teamCount / 2)
 
     // 驗證分組條件
-    if (!validateSplitInput(splitVal) && splitVal !== '') {
+    if ((splitVal !== '' && isValidArrayFormat(splitVal))) {
         alert('分組條件格式不正確，請檢查後重新輸入');
         return false;
     }
@@ -338,7 +338,18 @@ function validateRoundForm(formData) {
 }
 
 // 檢查輸入是否符合格式
-function validateSplitInput(input) {
-    const regex = /^\[\[(\d+,\d+)(?:,(\d+,\d+))*\]\]$/;
-    return regex.test(input);
+function isValidArrayFormat(arr, innerArrayLength = 2) {
+    // 檢查是否是陣列
+    if (!Array.isArray(arr)) {
+        return false;
+    }
+
+    // 確認每個內部元素是否是陣列，且長度符合
+    for (const subArray of arr) {
+        if (!Array.isArray(subArray) || subArray.length !== innerArrayLength) {
+            return false;
+        }
+    }
+
+    return true;
 }
