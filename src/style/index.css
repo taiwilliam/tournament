@@ -11,3 +11,19 @@
 .brackets-viewer section.group table{
   order: 0;
 }
+
+.fs-7 {
+  font-size: 0.875rem;
+}
+
+.fs-8 {
+  font-size: 0.75rem;
+}
+
+.hover-gray:hover {
+  background-color: #ECEFF1;
+}
+
+.bg-gray {
+  background-color: #ECEFF1 !important;
+}

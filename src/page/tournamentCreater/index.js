@@ -5,6 +5,7 @@ import { createFakeTeamList, renderMatchScore } from "./utility";
 const ELEMENT_STRING = '.brackets-viewer' // 賽程圖顯示器的根元素 必須有這個class才能渲染
 const PREVIEW_ELEMENT_STRING = '#preview-view'
 const SHOW_ELEMENT_STRING = '#show-view'
+const TEAM_ELEMENT_STRING = '.team-viewer'
 const TOURNAMENT_ID = 0
 const MATCH_GAME_COUNT = 3
 const STORAGE_KEY = 'tournament'
@@ -137,6 +138,39 @@ function getOrderParticipants(teamsArray, isRound, config) {
     return participants
 }
 
+// 渲染參賽隊伍
+function renderTeams(participants, elementString) {
+    const teamViewer = document.querySelector(elementString)
+
+    // 清空參賽隊伍
+    teamViewer.innerHTML = ''
+    participants.forEach((participant, index) => {
+        if (participant === null) return
+        const team = document.createElement('div')
+        team.classList.add(`js-team-hover`,'p-1','fs-8', 'border', 'hover-gray')
+        team.setAttribute('data-id', participant.id);
+        team.setAttribute('data-name', participant.name);
+        team.setAttribute('data-points', participant.points);
+
+        const name = document.createElement('span')
+        name.classList.add('mx-1')
+        name.innerHTML = `${participant.name}`
+
+        const id = document.createElement('span')
+        id.classList.add('fw-bold')
+        id.innerHTML = `${participant.id}.`
+
+        const points = document.createElement('span')
+        points.classList.add('text-danger')
+        points.innerHTML = `(${participant.points})`
+
+        team.prepend(points)
+        team.prepend(name)
+        team.prepend(id)
+        teamViewer.appendChild(team)
+    })
+}
+
 
 // 格式化賽事配置
 function formatTournamentConfig(formObject) {
@@ -145,6 +179,9 @@ function formatTournamentConfig(formObject) {
     const isRound = type === TYPE_ENUM.ROUND
     let type_
     let participants_ = getOrderParticipants(teamsArray, isRound, formObject)
+
+    // 渲染球員資訊
+    renderTeams(participants_, TEAM_ELEMENT_STRING)
 
     // 設定循環淘汰的參數
     if (isRound) {
@@ -216,6 +253,26 @@ async function submitToDo(formData) {
 function renderViewer(viewer, elementString, manager, tournamentData) {
     renderTournamentViewer(viewer, elementString, tournamentData, {
         onMatchClick: (match) => onMatchClick(match, viewer, manager, elementString),
+    })
+
+    // 渲染參賽隊伍顯示效果
+    setTeamNameHover()
+}
+
+
+function setTeamNameHover() {
+    const teamsEl = document.querySelectorAll('.js-team-hover');
+
+    teamsEl.forEach(element => {
+        const id = element.getAttribute('data-id');
+        const target = document.querySelector(`[data-participant-id="${id}"]`);
+        element.addEventListener('mouseover', () => {
+            target.classList.add('bg-gray')
+        });
+    
+        element.addEventListener('mouseout', () => {
+            target.classList.remove('bg-gray')
+        });
     })
 }
 
