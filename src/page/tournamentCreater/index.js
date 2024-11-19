@@ -1,10 +1,13 @@
 import { TYPE_ENUM, MODE_ENUM } from "./constants";
-import { createTournamentManager, renderTournamentViewer, createBracketsViewer, RoundRobin, KnockoutBracket, setParticipantImages, updateMatch, helpers, resetNextMatchByElimination } from "../../TournamentJS";
+import { createConfig, createStorage, createManager, renderTournamentViewer, createBracketsViewer, RoundRobin, KnockoutBracket, setParticipantImages, updateMatch, helpers, resetNextMatchByElimination } from "../../TournamentJS";
 import { createFakeTeamList, renderMatchScore } from "./utility";
 
 const ELEMENT_STRING = '.brackets-viewer'
+const PREVIEW_ELEMENT_STRING = '#preview-view'
+const SHOW_ELEMENT_STRING = '#show-view'
 const TOURNAMENT_ID = 0
 const MATCH_GAME_COUNT = 3
+const STORAGE_KEY = 'tournament'
 
 document.addEventListener('DOMContentLoaded', function () {
     const selectType = document.querySelector('.js-select-type');
@@ -12,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const bracketForm = document.querySelector('.js-bracket-form');
     const hiddenInputRound = roundForm.querySelector('.js-round-form input[name="type"]');
     const hiddenInputBracket = bracketForm.querySelector('.js-bracket-form input[name="type"]');
+    const renderTournamentBtn = document.querySelector('.js-render-tournament-data');
 
     // 初始化
     init()
@@ -33,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData(bracketForm);
         submitToDo(formData)
     });
+
+    // 點擊渲染儲存賽事按鈕
+    renderTournamentBtn.onclick = () => renderTournamentBtnTodo()
 
     // 初始化
     function init() {
@@ -64,6 +71,28 @@ document.addEventListener('DOMContentLoaded', function () {
         hiddenInputBracket.value = value;
     }
 });
+
+// 渲染賽事按鈕行為
+function renderTournamentBtnTodo() {
+    const data = localStorage.getItem(STORAGE_KEY)
+    const tournamentData = JSON.parse(data)
+    if(data == null) return alert('沒有賽事資料,請先創建並儲存賽事')
+
+    // 創建賽事庫
+    const storage = createStorage(tournamentData)
+    // 創建賽事管理者
+    const manager = createManager(storage)
+    // 創建賽事管理者
+    const viewer = createBracketsViewer()
+    setParticipantImages(viewer, tournamentData)
+    renderTournamentViewer(viewer, SHOW_ELEMENT_STRING, tournamentData, {
+        onMatchClick: (match) => onMatchClick(match, viewer, manager, SHOW_ELEMENT_STRING),
+    })
+
+    // 顯示彈窗
+    const modal = new bootstrap.Modal(document.getElementById('fullscreenModal'));
+    modal.show();
+}
 
 // 獲取排序後的參賽者
 function getOrderParticipants(teamsArray, isRound, config) {
@@ -117,8 +146,6 @@ function formatTournamentConfig(formObject) {
     let type_
     let participants_ = getOrderParticipants(teamsArray, isRound, formObject)
 
-    console.log('participants_', participants_)
-
     // 設定循環淘汰的參數
     if (isRound) {
         type_ = 'round_robin'
@@ -150,35 +177,50 @@ async function submitToDo(formData) {
 
     // 取得 FormData 用於查看提交數據
     const formObject = Object.fromEntries(formData.entries());
+    // 賽事參數格式化
+    const parameter = formatTournamentConfig(formObject)
 
-    // 創建賽事管理工具
-    const config = formatTournamentConfig(formObject)
-
+    // 創建賽事庫
+    const storage = createStorage()
     // 創建賽事管理者
-    const manager = await createTournamentManager(config)
+    const manager = createManager(storage)
+    // 獲取賽事配置參數
+    const config = createConfig(parameter)
+
+    // 初始化賽事管理者(注入賽事配置參數)
+    await manager.create.stage(config)
+    // 初始化賽程圖顯示器
     const viewer = createBracketsViewer()
 
     const tournamentData = await manager.get.stageData(0)
     setParticipantImages(viewer, tournamentData)
 
-    renderViewer(viewer, ELEMENT_STRING, manager, tournamentData)
+    renderViewer(viewer, PREVIEW_ELEMENT_STRING, manager, tournamentData)
 
     const getTournamentButton = document.querySelector('.js-get-tournament-data');
+    const saveTournamentBtn = document.querySelector('.js-save-tournament-data');
+
     getTournamentButton.onclick = async () => {
         const tournamentData = await manager.get.stageData(TOURNAMENT_ID)
         console.log('tournamentData', tournamentData)
+    }
+
+    saveTournamentBtn.onclick = async () => {
+        const tournamentData = await manager.get.stageData(TOURNAMENT_ID)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tournamentData))
+        alert('賽事資料已儲存成功')
     }
 }
 
 // 渲染比賽畫面
 function renderViewer(viewer, elementString, manager, tournamentData) {
     renderTournamentViewer(viewer, elementString, tournamentData, {
-        onMatchClick: (match) => onMatchClick(match, viewer, manager),
+        onMatchClick: (match) => onMatchClick(match, viewer, manager, elementString),
     })
 }
 
 // 點擊比賽時的行為
-async function onMatchClick(match, viewer, manager) {
+async function onMatchClick(match, viewer, manager, elementString) {
     // 創建隨機比賽資料函數，為了每次點擊重新觸發隨機函數
     const renderMatchData = (match_) => renderMatchScore(match_)
 
@@ -205,7 +247,7 @@ async function onMatchClick(match, viewer, manager) {
 
 
     // 更新比賽畫面
-    renderViewer(viewer, ELEMENT_STRING, manager, await manager.get.stageData(0))
+    renderViewer(viewer, elementString, manager, await manager.get.stageData(0))
 }
 
 

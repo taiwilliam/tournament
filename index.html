@@ -83,7 +83,7 @@
             <div class="col-2">
               <label for="selectMode" class="form-label">雙敗淘汰冠軍模式</label>
               <select name="grandFinal" class="form-select js-select-type" aria-label="雙敗淘汰冠軍模式" id="selectFinalMode">
-                <option value="none">無冠軍決賽 (勝部冠軍不需與敗部冠軍決賽直接勝利)</option>
+                <!-- <option value="none">無冠軍決賽 (勝部冠軍不需與敗部冠軍決賽直接勝利)</option> -->
                 <option value="simple">簡單決賽 (勝部冠軍與敗部冠軍決賽後直接結束)</option>
                 <option value="double">最終決賽 (勝部冠軍與敗部冠軍決賽後可再進行最終決賽)</option>
               </select>
@@ -114,14 +114,34 @@
           </div>
         </form>
         <button type="button" class="btn btn-secondary js-get-tournament-data">獲取賽事資料</button>
+        <button type="button" class="btn btn-secondary js-save-tournament-data">儲存賽事資料</button>
+        <button type="button" class="btn btn-secondary js-render-tournament-data">渲染儲存賽事</button>
       </div>
     </div>
 
-    <div class="brackets-viewer"></div>
+    <div class="brackets-viewer" id="preview-view"></div>
 
     <!-- <button class="reset-btn">清除</button>
     <button class="result-btn">成績</button>
     <button class="get-data-btn">get data</button> -->
+
+    <!-- Modal 結構 -->
+    <div class="modal fade" id="fullscreenModal" tabindex="-1" aria-labelledby="fullscreenModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="fullscreenModalLabel">模擬存資料庫拿出資料並渲染賽程圖</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="brackets-viewer" id="show-view"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
     
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>

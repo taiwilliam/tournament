@@ -4,8 +4,23 @@ import { BracketsViewer } from '../../vendors/brackets-viewer.js-master/src'
 import { managerConfigSetting } from './constants'
 import { asyncForEach } from '../utility'
 
+// 創建儲存庫(模擬DB)
+// stageData 有點像資料庫就是 manager.get.stageData(0) return這樣的資料
+// 未來會儲存stageData 若讀取後還想要透過manager管理 則要注入回去
+export function createStorage(stageData) {
+    // InMemoryDatabase 類的作用是實現一個基於記憶體的資料庫 為了將接下來的manager物件模擬成一個資料庫
+    const storage = new InMemoryDatabase()
+    if(stageData) storage.data = stageData
+    return storage
+}
+
+// 創建賽事管理者
+export function createManager(storage) {
+    return new BracketsManager(storage)
+}
+
 // 創建賽程管理工具
-export async function createTournamentManager(
+export function createConfig(
     config = {
         // 通用參數
         name: '', // 賽事名稱
@@ -17,36 +32,31 @@ export async function createTournamentManager(
         groupCount: '', // 循環賽的分組數量
         roundRobinMode: 'simple', // 循環賽的比賽模式：simple, double
         // 淘汰賽
-        grandFinal: 'none', // 雙敗淘汰賽的冠軍決賽模式 
+        grandFinal: 'none', // 雙敗淘汰賽的冠軍決賽模式
         //   none: 無冠軍決賽。
         //   simple: 冠軍決賽為單場比賽，贏家即為該階段的冠軍。
         //   double: 若 WB 的冠軍在冠軍決賽中失利，將進行最終決賽。
-        consolationFinal: false, // 是否要比出三四名
+        consolationFinal: false // 是否要比出三四名
         // skipFirstRound: false, // 是否跳過雙敗淘汰賽首輪，將後面半部的選手直接視為敗部 (太少用到，暫時不開放)
     }
 ) {
     if (!config) {
         throw new Error('config is required')
     }
-    if (!config.name || !config.type || !config.participants || config.tournamentId == null || config.tournamentId == undefined) {
+    if (
+        !config.name ||
+        !config.type ||
+        !config.participants ||
+        config.tournamentId == null ||
+        config.tournamentId == undefined
+    ) {
         throw new Error('name, type, participants, tournamentId are required')
     }
     if (config.type === 'round_robin' && !config.groupCount) {
         throw new Error('groupCount is required')
     }
 
-    // InMemoryDatabase 類的作用是實現一個基於記憶體的資料庫 為了將接下來的manager物件模擬成一個資料庫
-    const storage = new InMemoryDatabase()
-    // BracketsManager 類是賽事管理工具的核心類
-    const manager = new BracketsManager(storage)
-    // 格式化賽事參數
-    const managerConfig = formatTournamentConfig(config)
-
-    // 使用賽事管理工具創建賽事
-    await manager.create.stage(managerConfig)
-
-    // 回傳賽事管理工具
-    return manager
+    return formatTournamentConfig(config)
 }
 
 // 格式化賽事參數
@@ -70,7 +80,7 @@ function formatTournamentConfig(config) {
             roundRobinMode: config.roundRobinMode,
             // 淘汰賽
             grandFinal: config.grandFinal,
-            consolationFinal: config.consolationFinal,
+            consolationFinal: config.consolationFinal
             // skipFirstRound: config.skipFirstRound,
         }
     }
@@ -92,7 +102,7 @@ export function renderTournamentViewer(viewer, elementString, tournamentData, co
         {
             onMatchClick: () => {},
             onMatchLabelClick: () => {},
-            customRoundName: (arg) => setCustomRoundName(arg),
+            customRoundName: arg => setCustomRoundName(arg),
             clear: true, // 使否清除之前的資料
             selector: elementString,
             participantOriginPlacement: 'before', // "none" | "before" | "after" UI設定: id的位置
@@ -122,7 +132,7 @@ async function getStageData(manager, tournament_id) {
 export function setParticipantImages(viewer, tournamentData, participantImagesArray) {
     return viewer.setParticipantImages(
         tournamentData.participant.map(participant => {
-            const renderInt = Math.floor(Math.random() * 20) + 1;
+            const renderInt = Math.floor(Math.random() * 20) + 1
             return {
                 participantId: participant.id,
                 imageUrl: `https://mighty.tools/mockmind-api/content/human/${renderInt}.jpg`
@@ -130,7 +140,6 @@ export function setParticipantImages(viewer, tournamentData, participantImagesAr
         })
     )
 }
-
 
 // 更新比賽成績
 export async function updateMatch(matchData, manager, force = false) {
@@ -141,10 +150,9 @@ export async function updateMatch(matchData, manager, force = false) {
     }
 }
 
-
 // 設定roundRobinMode
 function setCustomRoundName(arg) {
-    const { 
+    const {
         fractionOfFinal, // 決賽階段的比例
         finalType, // 決賽階段的類型 grand-final
         groupType, // 賽制
@@ -157,13 +165,11 @@ function setCustomRoundName(arg) {
         'single-bracket': () => {}, // 單敗淘汰賽
         'winner-bracket': () => {}, // 雙敗淘汰賽 - 勝部
         'loser-bracket': () => {}, // 雙敗淘汰賽 - 敗部
-        'final-group': () => {}, // 決賽
+        'final-group': () => {} // 決賽
     }
     // todo: 未完成，待i18翻譯後再補上
     // return ROUND_NAME_STRATEGY[groupType](arg)
 }
-
-
 
 // 淘汰賽中 清除影響到的下一場賽事
 // 通常用在更新成績前，需要清除影響到的上層腳位
@@ -184,15 +190,15 @@ export async function resetNextMatchByElimination(match, manager) {
 // 尋找淘汰賽中，所有上層的賽事
 async function findAllNextMatches(match, manager) {
     const result = [] // 結果
-    
+
     // 遞回尋找所有下一層賽事
     const findAllNextMatchesRecursion = async (match, manager) => {
         // 獲取下一場賽事
-        const nextMatches = await manager.find.nextMatches(match.id) 
+        const nextMatches = await manager.find.nextMatches(match.id)
 
         // 沒有下一場就結束遞迴
         if (nextMatches.length == 0) return
-        
+
         // 繼續尋找所有賽事直到結束
         await asyncForEach(nextMatches, async match => {
             if (helpers.isMatchCompleted(match)) {
