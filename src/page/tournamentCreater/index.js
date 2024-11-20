@@ -296,7 +296,6 @@ async function onMatchClick(match, viewer, manager, elementString) {
 
         // 勝方改變 需要清除被影響的match
         await resetNextMatchByElimination(match, manager)
-        await manager.reset.matchResults(match.id)
         
         // 更新比賽結果
         await updateMatch(renderMatchData(match), manager, true)

@@ -13,6 +13,21 @@ export function renderMatchScore(match) {
     let opponent1_score = win === 'opponent1' ? win_score : lose_score
     let opponent2_score = win === 'opponent2' ? win_score : lose_score
 
+    
+    // 棄權的範例
+    // return {
+    //     id: match.id,
+    //     opponent1: {
+    //         forfeit: true, // 棄權
+    //         id: match.opponent1.id,
+    //         position: match.opponent1.position
+    //     },
+    //     opponent2: {
+    //         id: match.opponent2.id,
+    //         position: match.opponent2.position
+    //     }
+    // }
+
     return {
         id: match.id,
         opponent1: {
