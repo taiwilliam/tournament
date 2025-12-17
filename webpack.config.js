@@ -2,19 +2,24 @@ const path = require('path')
 const HTMLWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-    mode: "development",
-    entry: "./src/index",
+    mode: 'development',
+    entry: './src/index',
     devServer: {
         static: './src'
     },
     output: {
-        path: path.resolve(__dirname, "./docs"),
-        filename: "bundle.js"
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'tournamentjs.bundle.js',
+        library: 'TournamentJS',
+        libraryTarget: 'umd',
+        globalObject: 'this',
+        clean: true
     },
     resolve: {
-        extensions: [".ts", ".js", ".cjs", ".json"],
+        extensions: ['.ts', '.js', '.cjs', '.json'],
         alias: {
             '@': path.join(__dirname, 'src'),
+            vendors: path.resolve(__dirname, 'src/vendors/')
         }
     },
     module: {
@@ -24,16 +29,26 @@ module.exports = {
                 use: [{ loader: 'style-loader' }, { loader: 'css-loader' }]
             },
             {
-                test: /\.scss$/,  // 匹配 SCSS 檔案
+                test: /\.scss$/, // 匹配 SCSS 檔案
                 use: [
-                    'style-loader',  // 把 CSS 加入到 DOM 中
-                    'css-loader',    // 解析 CSS
-                    'sass-loader'    // 解析 SCSS
-                ],
+                    'style-loader', // 把 CSS 加入到 DOM 中
+                    'css-loader', // 解析  CSS
+                    'sass-loader' // 解析 SCSS
+                ]
             },
             {
-                test: /\.ts/,
-                loader: "ts-loader"
+                test: /\.ts$/,
+                use: 'ts-loader',
+                exclude: /node_modules/
+            },
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: 'babel-loader'
+            },
+            {
+                test: /\.json$/,
+                type: 'json'
             }
         ]
     },
