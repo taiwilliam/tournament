@@ -3,7 +3,7 @@ const HTMLWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
     mode: 'development',
-    entry: './src/index',
+    entry: './src/TournamentJS/index.js',
     devServer: {
         static: './src'
     },
