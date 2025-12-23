@@ -2,13 +2,13 @@
  * Contains everything which is given by the user as input.
  *-----------------------------------------------------------*/
 
-import { Participant } from './storage';
-import { GrandFinalType, Id, RoundRobinMode, SeedOrdering, StageType } from './unions';
+import { Participant } from './storage'
+import { GrandFinalType, Id, RoundRobinMode, SeedOrdering, StageType } from './unions'
 
 /**
  * A participant as it would be persisted in the storage, but with extra fields.
  */
-export type CustomParticipant<ExtraFields = Record<string, unknown>> = Participant & ExtraFields;
+export type CustomParticipant<ExtraFields = Record<string, unknown>> = Participant & ExtraFields
 
 /**
  * The seeding for a stage.
@@ -19,12 +19,12 @@ export type CustomParticipant<ExtraFields = Record<string, unknown>> = Participa
  * - Its ID (only integers are supported, for backwards compatibility).
  * - Or a BYE: `null`.
  */
-export type Seeding = (CustomParticipant | string | number | null)[];
+export type Seeding = (CustomParticipant | string | number | null)[]
 
 /**
  * The seeding for a stage (only containing IDs or BYEs).
  */
-export type IdSeeding = (Id | null)[];
+export type IdSeeding = (Id | null)[]
 
 /**
  * Used to create a stage.
@@ -35,23 +35,23 @@ export interface InputStage {
      *
      * Used to determine the `number` property of a stage related to a tournament.
      */
-    tournamentId: Id,
+    tournamentId: Id
 
     /** Name of the stage. */
-    name: string,
+    name: string
 
     /** Type of stage. */
-    type: StageType,
+    type: StageType
 
     /** The number of the stage in its tournament. Is determined if not given. */
-    number?: number,
+    number?: number
 
     /** Contains participants or `null` for BYEs. */
-    seeding?: Seeding,
-    seedingIds?: IdSeeding,
+    seeding?: Seeding
+    seedingIds?: IdSeeding
 
     /** Contains optional settings specific to each stage type. */
-    settings?: StageSettings,
+    settings?: StageSettings
 }
 
 /**
@@ -61,7 +61,7 @@ export interface StageSettings {
     /**
      * The number of participants.
      */
-    size?: number,
+    size?: number
 
     /**
      * A list of ordering methods to apply to the seeding.
@@ -75,24 +75,24 @@ export interface StageSettings {
      *   - Item 2 - Used to distribute WB losers in LB round 1.
      *   - Items 3+ - Used to distribute WB losers in LB minor rounds (1 per round).
      */
-    seedOrdering?: SeedOrdering[],
+    seedOrdering?: SeedOrdering[]
 
     /**
      * Whether to balance BYEs in the seeding of an elimination stage.
      *
      * This prevents having BYE against BYE in matches.
      */
-    balanceByes?: boolean,
+    balanceByes?: boolean
 
     /**
      * All matches of the stage will have this child count. This can later be overridden for certain groups, rounds or matches.
      */
-    matchesChildCount?: number,
+    matchesChildCount?: number
 
     /**
      * Number of groups in a round-robin stage.
      */
-    groupCount?: number,
+    groupCount?: number
 
     /**
      * The mode for the round-robin stage.
@@ -100,24 +100,24 @@ export interface StageSettings {
      * - If `simple`, each participant plays each opponent once.
      * - If `double`, each participant plays each opponent twice, once at home and once away.
      */
-    roundRobinMode?: RoundRobinMode,
+    roundRobinMode?: RoundRobinMode
 
     /**
      * A list of seeds per group for a round-robin stage to be manually ordered.
      *
      * Seed ordering is ignored if this property is given.
      */
-    manualOrdering?: number[][],
+    manualOrdering?: number[][]
 
     /**
      * Optional final between semi-final losers.
      */
-    consolationFinal?: boolean,
+    consolationFinal?: boolean
 
     /**
      * Whether to skip the first round of the WB of a double elimination stage.
      */
-    skipFirstRound?: boolean,
+    skipFirstRound?: boolean
 
     /**
      * Optional grand final between WB and LB winners.
@@ -127,5 +127,10 @@ export interface StageSettings {
      * - If `double`, if the WB winner wins, he's the winner of the stage. But if he loses, the final is reset and there is a very last match.
      * It might be fairer since it gives the WB winner the right to lose once during the stage...
      */
-    grandFinal?: GrandFinalType,
+    grandFinal?: GrandFinalType
+
+    /**
+     * 分組人數設定（自訂每組人數，陣列每個元素代表該組人數，例如 [2,7,4] 代表三組，分別2人、7人、4人）。
+     */
+    groupSizes?: number[]
 }
